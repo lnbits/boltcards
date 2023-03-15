@@ -1,6 +1,6 @@
 # Bolt cards (NXP NTAG) Extension
 
-This extension allows you to link your Bolt Card (or other compatible NXP NTAG device) with a LNbits instance and use it in a more secure way than a static LNURLw. A technology called [Secure Unique NFC](https://mishka-scan.com/blog/secure-unique-nfc) is utilized in this workflow. 
+This extension allows you to link your Bolt Card (or other compatible NXP NTAG device) with a LNbits instance on an Android phone (only) and preferable through chrome - and use it in a more secure way than a static LNURLw. A technology called [Secure Unique NFC](https://mishka-scan.com/blog/secure-unique-nfc) is utilized in this workflow. 
 
 <a class="text-secondary" href="https://www.youtube.com/watch?v=wJ7QLFTRjK0">Tutorial</a>
 
