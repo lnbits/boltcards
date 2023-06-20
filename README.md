@@ -56,7 +56,7 @@ Since v0.1.2 of Boltcard NFC Card Creator it is possible not only reset the keys
 - OR click the red cross icon on the right side to reach the same
 - In the android app (Bottom menu -> Reset Keys)
     - Click SCAN QR CODE to scan the QR
-    - Or click COPY WIPE JSON in LNbits to copy and paste in to the app (PASTE KEY JSON)
+    - Or click COPY Key JSON in LNbits to copy and paste in to the app (PASTE KEY JSON)
 - Click RESET CARD NOW and approach the NFC card to erase it. DO NOT REMOVE THE CARD PREMATURELY!
 - Now if there is all success the card can be safely delete from LNbits (but keep the keys backuped anyway; batter safe than brick).
 
