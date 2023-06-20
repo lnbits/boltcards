@@ -36,15 +36,15 @@ Updated for v0.1.3
     - Set a card name. This is just for your reference inside LNbits.
     - Set the card UID. This is the unique identifier on your NFC card and is 7 bytes.
         - If on an Android device with a newish version of Chrome, you can click the icon next to the input and tap your card to autofill this field.
-        - Otherwise read it with the Android app (Advanced -> Read NFC) and paste it to the field.
+        - Otherwise read it with the Android app (Bottom menu -> Read NFC) and paste it to the field.
     - Advanced Options
         - Card Keys (k0, k1, k2) will be automatically generated if not explicitly set.
             - Set to 16 bytes of 0s (00000000000000000000000000000000) to leave the keys in default (empty) state (this is unsecure).
             - GENERATE KEY button fill the keys randomly.
-    - Click CREATE CARD button
+    - Click COPY AUTH URL button
 - Click the QR code button next to a card to view its details. Backup the keys now! They'll be comfortable in your password manager.
     - Now you can scan the QR code with the Android app (Create Bolt Card -> SCAN QR CODE).
-    - Or you can Click the "KEYS / AUTH LINK" button to copy the auth URL to the clipboard. Then paste it into the Android app (Create Bolt Card -> PASTE AUTH URL).
+    - Or you can Click the "COPY AUTH URL" button to copy the auth URL to the clipboard. Then paste it into the Android app (Create Bolt Card -> PASTE AUTH URL).
 - Click WRITE CARD NOW and approach the NFC card to set it up. DO NOT REMOVE THE CARD PREMATURELY!
 
 ## Erasing the card - Boltcard NFC Card Creator
@@ -54,9 +54,9 @@ Since v0.1.2 of Boltcard NFC Card Creator it is possible not only reset the keys
 
 - Click the QR code button next to a card to view its details and select WIPE
 - OR click the red cross icon on the right side to reach the same
-- In the android app (Advanced -> Reset Keys)
+- In the android app (Bottom menu -> Reset Keys)
     - Click SCAN QR CODE to scan the QR
-    - Or click WIPE DATA in LNbits to copy and paste in to the app (PASTE KEY JSON)
+    - Or click COPY WIPE JSON in LNbits to copy and paste in to the app (PASTE KEY JSON)
 - Click RESET CARD NOW and approach the NFC card to erase it. DO NOT REMOVE THE CARD PREMATURELY!
 - Now if there is all success the card can be safely delete from LNbits (but keep the keys backuped anyway; batter safe than brick).
 

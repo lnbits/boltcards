@@ -105,7 +105,7 @@
                   color="pink"
                 >
                   <q-tooltip
-                    >Deleting card will also delete all records</q-tooltip
+                    >Deleting the card will also delete all records</q-tooltip
                   >
                 </q-btn>
               </q-td>
@@ -198,7 +198,7 @@
     <q-card>
       <q-card-section>
         <h6 class="text-subtitle1 q-my-none">
-          {{SITE_TITLE}} Bolt Cards extension
+          {{SITE_TITLE}} Bolt Cards Extension
         </h6>
       </q-card-section>
       <q-card-section class="q-pa-none">
@@ -228,7 +228,7 @@
               emit-value
               v-model.trim="cardDialog.data.tx_limit"
               type="number"
-              label="Max transaction (sats)"
+              label="Transaction limit (sats)"
               class="q-pr-sm"
             ></q-input>
           </div>
@@ -435,7 +435,7 @@
         outline
         color="grey"
         @click="copyText(qrCodeDialog.data.link)"
-        label="Create link"
+        label="Copy Auth URL"
         v-show="!qrCodeDialog.wipe"
       >
         <q-tooltip>Click to copy, then paste to NFC Card Creator</q-tooltip>
@@ -445,7 +445,7 @@
         outline
         color="grey"
         @click="copyText(qrCodeDialog.data_wipe)"
-        label="Wipe data"
+        label="Copy Wipe JSON"
         v-show="qrCodeDialog.wipe"
       >
         <q-tooltip>Click to copy, then paste to NFC Card Creator</q-tooltip>
