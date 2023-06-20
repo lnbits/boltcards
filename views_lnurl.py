@@ -67,7 +67,7 @@ async def api_scan(p, c, request: Request, external_id: str):
         ip = request.headers["x-forwarded-for"]
 
     agent = request.headers["user-agent"] if "user-agent" in request.headers else ""
-    todays_hits = await get_hits_today(card.id)
+    todays_hits = await get_hits_today(card.id, True)
 
     hits_amount = 0
     for hit in todays_hits:
@@ -143,6 +143,22 @@ async def lnurl_callback(
         return {"status": "OK"}
     except Exception as exc:
         return {"status": "ERROR", "reason": f"Payment failed - {exc}"}
+
+    if invoice.amount_msat < card.tx_limit * 1000:
+        hit = await spend_hit(id=hit.id, amount=int(invoice.amount_msat / 1000))
+        assert hit
+        try:
+            await pay_invoice(
+                wallet_id=card.wallet,
+                payment_request=pr,
+                max_sat=card.tx_limit,
+                extra={"tag": "boltcard", "hit": hit.id},
+            )
+            return {"status": "OK"}
+        except Exception as exc:
+            return {"status": "ERROR", "reason": f"Payment failed - {exc}"}
+    else:
+        return {"status": "ERROR", "reason": "Amount too high"}
 
 
 # /boltcards/api/v1/auth?a=00000000000000000000000000000000
