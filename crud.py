@@ -161,10 +161,10 @@ async def get_hits(cards_ids: list[str]) -> list[Hit]:
 
 
 
-async def get_hits_today(card_id: str, spent: bool) -> List[Hit]:
+async def get_hits_today(card_id: str) -> List[Hit]:
     rows = await db.fetchall(
-        "SELECT * FROM boltcards.hits WHERE card_id = ? AND spent = ?",
-        (card_id, spent,),
+        "SELECT * FROM boltcards.hits WHERE card_id = ?",
+        (card_id,),
     )
     updatedrow = []
     for hit in rows:

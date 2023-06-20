@@ -67,7 +67,7 @@ async def api_scan(p, c, request: Request, external_id: str):
         ip = request.headers["x-forwarded-for"]
 
     agent = request.headers["user-agent"] if "user-agent" in request.headers else ""
-    todays_hits = await get_hits_today(card.id, True)
+    todays_hits = await get_hits_today(card.id)
 
     hits_amount = 0
     for hit in todays_hits:
