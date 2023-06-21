@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Optional
 
 from fastapi import Depends, HTTPException, Query
 
@@ -37,7 +38,7 @@ async def api_cards(
 @boltcards_ext.put("/api/v1/cards/{card_id}", status_code=HTTPStatus.OK)
 async def api_card_create_or_update(
     data: CreateCardData,
-    card_id: str = Query(None),
+    card_id: Optional[str],
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
     try:
