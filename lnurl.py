@@ -78,7 +78,7 @@ async def api_scan(p, c, request: Request, external_id: str):
     lnurlpay = lnurl_encode(str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id)))
     return {
         "tag": "withdrawRequest",
-        "callback": request.url_for("boltcards.lnurl_callback", hitid=hit.id),
+        "callback": str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id)),
         "k1": hit.id,
         "minWithdrawable": 1 * 1000,
         "maxWithdrawable": card.tx_limit * 1000,
@@ -87,13 +87,14 @@ async def api_scan(p, c, request: Request, external_id: str):
 
 
 @boltcards_ext.get(
-    "/api/v1/lnurl/cb/{hitid}",
+    "/api/v1/lnurl/cb/{hit_id}",
     status_code=HTTPStatus.OK,
     name="boltcards.lnurl_callback",
 )
 async def lnurl_callback(
-    pr: str = Query(None),
+    hit_id: str,
     k1: str = Query(None),
+    pr: str = Query(None),
 ):
     if not k1:
         return {"status": "ERROR", "reason": "Missing K1 token"}
