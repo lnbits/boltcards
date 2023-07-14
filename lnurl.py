@@ -31,7 +31,7 @@ from .nxp424 import decryptSUN, getSunMAC
 
 # /boltcards/api/v1/scan?p=00000000000000000000000000000000&c=0000000000000000
 @boltcards_ext.get("/api/v1/scan/{external_id}")
-async def api_scan(p, c, request: Request, external_id: str = Query(None)):
+async def api_scan(p, c, request: Request, external_id: str):
     # some wallets send everything as lower case, no bueno
     p = p.upper()
     c = c.upper()
@@ -75,10 +75,10 @@ async def api_scan(p, c, request: Request, external_id: str = Query(None)):
     if hits_amount > card.daily_limit:
         return {"status": "ERROR", "reason": "Max daily limit spent. Increase your daily limit in LNbits."}
     hit = await create_hit(card.id, ip, agent, card.counter, ctr_int)
-    lnurlpay = lnurl_encode(request.url_for("boltcards.lnurlp_response", hit_id=hit.id))
+    lnurlpay = lnurl_encode(str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id)))
     return {
         "tag": "withdrawRequest",
-        "callback": request.url_for("boltcards.lnurl_callback", hitid=hit.id),
+        "callback": str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id)),
         "k1": hit.id,
         "minWithdrawable": 1 * 1000,
         "maxWithdrawable": card.tx_limit * 1000,
@@ -87,13 +87,14 @@ async def api_scan(p, c, request: Request, external_id: str = Query(None)):
 
 
 @boltcards_ext.get(
-    "/api/v1/lnurl/cb/{hitid}",
+    "/api/v1/lnurl/cb/{hit_id}",
     status_code=HTTPStatus.OK,
     name="boltcards.lnurl_callback",
 )
 async def lnurl_callback(
-    pr: str = Query(None),
+    hit_id: str,
     k1: str = Query(None),
+    pr: str = Query(None),
 ):
     if not k1:
         return {"status": "ERROR", "reason": "Missing K1 token"}
@@ -175,7 +176,7 @@ async def api_auth(a, request: Request):
     response_class=HTMLResponse,
     name="boltcards.lnurlp_response",
 )
-async def lnurlp_response(req: Request, hit_id: str = Query(None)):
+async def lnurlp_response(req: Request, hit_id: str):
     hit = await get_hit(hit_id)
     assert hit
     card = await get_card(hit.card_id)
@@ -199,7 +200,7 @@ async def lnurlp_response(req: Request, hit_id: str = Query(None)):
     response_class=HTMLResponse,
     name="boltcards.lnurlp_callback",
 )
-async def lnurlp_callback(hit_id: str = Query(None), amount: str = Query(None)):
+async def lnurlp_callback(hit_id: str, amount: str = Query(None)):
     hit = await get_hit(hit_id)
     assert hit
     card = await get_card(hit.card_id)
