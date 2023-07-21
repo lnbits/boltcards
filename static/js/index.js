@@ -242,6 +242,7 @@ new Vue({
         .then(function (response) {
           self.hits = response.data.map(function (obj) {
             obj.card_name = self.cards.find(d => d.id == obj.card_id).card_name
+            obj.amount = obj.spent ? obj.amount : "(" + obj.amount + ")"
             return mapCards(obj)
           })
         })
