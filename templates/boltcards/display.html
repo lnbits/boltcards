@@ -5,7 +5,7 @@
     <q-card>
       <q-card-section>
         <div class="text-h6">Card Info</div>
-        <div class="text-subtitle2">${card.enable}</div>
+        <div class="text-subtitle2">This card is ${enabled}</div>
       </q-card-section>
 
       <q-separator dark inset></q-separator>
@@ -27,7 +27,28 @@
     </q-card>
   </div>
   <div class="col-12 col-md-6 col-lg-5 q-gutter-y-md">
-    <q-card>Pong</q-card>
+    <q-card>
+      <q-card-section>
+        <div class="text-h6">Latest Transactions</div>
+        <!-- <div class="text-subtitle2">This card is ${enabled}</div> -->
+      </q-card-section>
+
+      <q-separator dark inset></q-separator>
+
+      <q-card-section>
+        <!-- <q-list>
+          <q-item v-for="hit in hits">
+            <q-item-section>
+              <q-item-label lines="1">${hit}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-tooltip>Click to copy</q-tooltip>
+              <q-btn flat round icon="content_copy" @click="copyText(hit)" />
+            </q-item-section>
+          </q-item>          
+        </q-list> -->
+      </q-card-section>
+    </q-card>
   </div>
 </div>
 
