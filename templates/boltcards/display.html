@@ -1,8 +1,30 @@
-{% extends "public.html" %} {% block toolbar_title %} Boltcard: {% raw %}{{
-    card_name }}{% endraw %}{% endblock %} {% block page %}
+{% extends "public.html" %} {% block toolbar_title %} Boltcard: ${
+    card.card_name }{% endblock %} {% block page %}
 <div class="row q-col-gutter-md justify-center">
   <div class="col-12 col-md-6 col-lg-5 q-gutter-y-md">
-    <q-card>Ping</q-card>
+    <q-card>
+      <q-card-section>
+        <div class="text-h6">Card Info</div>
+        <div class="text-subtitle2">${card.enable}</div>
+      </q-card-section>
+
+      <q-separator dark inset></q-separator>
+
+      <q-card-section>
+        <q-list>
+          <q-item v-for="item in cardInfo">
+            <q-item-section>
+              <q-item-label lines="1">${item.label}</q-item-label>
+              <q-item-label caption>${card[item.value]}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-tooltip>Click to copy</q-tooltip>
+              <q-btn flat round icon="content_copy" @click="copyText(item.value)" />
+            </q-item-section>
+          </q-item>          
+        </q-list>
+      </q-card-section>
+    </q-card>
   </div>
   <div class="col-12 col-md-6 col-lg-5 q-gutter-y-md">
     <q-card>Pong</q-card>
@@ -15,19 +37,58 @@
 
   new Vue({
     el: '#vue',
+    delimiters: ['${', '}'],
     mixins: [windowMixin],
     data: function () {
       return {
-        
+        card: null,
+        hits: null,
+        cardInfo: [
+          {
+            label: 'Card UID',
+            value: 'uid'
+          },
+          {
+            label: 'Transaction Limit',
+            value: 'tx_limit'
+          },
+          {
+            label: 'Daily Limit',
+            value: 'daily_limit'
+          },
+          {
+            label: 'Auth Key',
+            value: 'k0'
+          },
+          {
+            label: 'Meta Key',
+            value: 'k1'
+          },
+          {
+            label: 'File Key',
+            value: 'k2',
+          }
+        ]
       }
     },
     created() {
+      this.card = JSON.parse('{{ card | tojson}}')
+      this.hits = JSON.parse('{{ hits | tojson}}')
+      console.log(this.card, this.hits)
     },
     computed: {
+      enabled(){
+        return this.card.enable ? 'Enabled' : 'Disabled'
+      }
     },
     methods: {
-      ping() {
-        console.log('ping')
+      copyText(text, message, position) {
+        Quasar.utils.copyToClipboard(text).then(() => {
+          this.$q.notify({
+            message: message || 'Copied to clipboard!',
+            position: position || 'bottom'
+          })
+        })
       }
     }
   })
