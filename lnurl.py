@@ -8,7 +8,7 @@ from lnurl import encode as lnurl_encode
 from lnurl.types import LnurlPayMetadata
 from starlette.responses import HTMLResponse
 
-from lnbits import bolt11
+from bolt11.decode import decode
 from lnbits.core.services import create_invoice
 from lnbits.core.views.api import pay_invoice
 
@@ -112,13 +112,13 @@ async def lnurl_callback(
         return {"status": "ERROR", "reason": "Missing payment request"}
 
     try:
-        invoice = bolt11.decode(pr)
+        invoice = decode(pr)
     except:
         return {"status": "ERROR", "reason": "Failed to decode payment request"}
 
     card = await get_card(hit.card_id)
     assert card
-    hit = await spend_hit(id=hit.id, amount=int(invoice.amount_msat / 1000))
+    hit = await spend_hit(id=hit.id, amount=int(invoice.amount / 1000))
     assert hit
     try:
         await pay_invoice(
