@@ -1,0 +1,35 @@
+{% extends "public.html" %} {% block toolbar_title %} Boltcard: {% raw %}{{
+    card_name }}{% endraw %}{% endblock %} {% block page %}
+<div class="row q-col-gutter-md justify-center">
+  <div class="col-12 col-md-6 col-lg-5 q-gutter-y-md">
+    <q-card>Ping</q-card>
+  </div>
+  <div class="col-12 col-md-6 col-lg-5 q-gutter-y-md">
+    <q-card>Pong</q-card>
+  </div>
+</div>
+
+{% endblock %}{% block scripts %}
+<script>
+  Vue.component(VueQrcode.name, VueQrcode)
+
+  new Vue({
+    el: '#vue',
+    mixins: [windowMixin],
+    data: function () {
+      return {
+        
+      }
+    },
+    created() {
+    },
+    computed: {
+    },
+    methods: {
+      ping() {
+        console.log('ping')
+      }
+    }
+  })
+</script>
+{% endblock %}
