@@ -27,11 +27,14 @@ async def display(request: Request, card_id: str):
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Card does not exist."
         )
-    hits = await get_hits([card_id])
+    hits = [hit.dict() for hit in await get_hits([card.id])]
+    card = card.dict()
+    # Remove wallet id from card dict
+    del card["wallet"]
     return boltcards_renderer().TemplateResponse(
         "boltcards/display.html", {
-            "request": request, 
-            "card_name": card.card_name,
-            
+            "request": request,
+            "card": card,
+            "hits": hits,
         }
     )
