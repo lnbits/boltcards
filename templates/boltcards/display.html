@@ -29,24 +29,26 @@
   <div class="col-12 col-md-6 col-lg-5 q-gutter-y-md">
     <q-card>
       <q-card-section>
-        <div class="text-h6">Latest Transactions</div>
-        <!-- <div class="text-subtitle2">This card is ${enabled}</div> -->
+        <div class="text-h6">Transactions</div>
+        <div class="text-subtitle2">Latest transactions</div>
       </q-card-section>
 
       <q-separator dark inset></q-separator>
 
       <q-card-section>
-        <!-- <q-list>
+        <q-list>
           <q-item v-for="hit in hits">
             <q-item-section>
-              <q-item-label lines="1">${hit}</q-item-label>
+              <q-item-label>Single line item</q-item-label>
+              <q-item-label caption lines="1">IP: ${hit.ip}</q-item-label>
             </q-item-section>
-            <q-item-section side>
-              <q-tooltip>Click to copy</q-tooltip>
-              <q-btn flat round icon="content_copy" @click="copyText(hit)" />
+    
+            <q-item-section side top>
+              <q-item-label caption>${hit.date}</q-item-label>
+              <q-item-label caption>${hit.amount} sats</q-item-label>
             </q-item-section>
-          </q-item>          
-        </q-list> -->
+          </q-item>       
+        </q-list>
       </q-card-section>
     </q-card>
   </div>
@@ -54,6 +56,14 @@
 
 {% endblock %}{% block scripts %}
 <script>
+  const mapHits = obj => {
+  obj.date = Quasar.utils.date.formatDate(
+    new Date(obj.time * 1000),
+    'YYYY-MM-DD HH:mm'
+  )
+
+  return obj
+}
   Vue.component(VueQrcode.name, VueQrcode)
 
   new Vue({
@@ -94,7 +104,8 @@
     },
     created() {
       this.card = JSON.parse('{{ card | tojson}}')
-      this.hits = JSON.parse('{{ hits | tojson}}')
+      let hits = JSON.parse('{{ hits | tojson}}')
+      this.hits = hits.map(mapHits)
       console.log(this.card, this.hits)
     },
     computed: {
