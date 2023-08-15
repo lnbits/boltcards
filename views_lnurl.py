@@ -145,7 +145,7 @@ async def lnurl_callback(
     except Exception as exc:
         return {"status": "ERROR", "reason": f"Payment failed - {exc}"}
 
-    if True:#invoice.amount_msat <= card.tx_limit * 1000:
+    if invoice.amount_msat <= card.tx_limit * 1000:
         hit = await spend_hit(id=hit.id, amount=int(invoice.amount_msat / 1000))
         assert hit
         try:
