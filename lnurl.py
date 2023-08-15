@@ -120,7 +120,7 @@ async def lnurl_callback(
     card = await get_card(hit.card_id)
     assert card
 
-    if True:#invoice.amount_msat <= card.tx_limit * 1000:
+    if invoice.amount_msat <= card.tx_limit * 1000:
         hit = await spend_hit(id=hit.id, amount=int(invoice.amount_msat / 1000))
         assert hit
         try:
