@@ -23,7 +23,7 @@ from .models import Card, CreateCardData
 
 @boltcards_ext.get("/api/v1/cards")
 async def api_cards(
-    g: WalletTypeInfo = Depends(get_key_type), all_wallets: bool = Query(False)
+    g: WalletTypeInfo = Depends(get_key_type), all_wallets: bool = False
 ):
     wallet_ids = [g.wallet.id]
 
@@ -66,6 +66,7 @@ def validate_card(data: CreateCardData):
     status_code=HTTPStatus.OK,
     dependencies=[Depends(validate_card)]
 )
+
 async def api_card_update(
     data: CreateCardData,
     card_id: str,
