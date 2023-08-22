@@ -18,7 +18,7 @@ from .crud import (
     get_refunds,
     update_card,
 )
-from .models import CreateCardData
+from .models import Card, CreateCardData
 
 
 @boltcards_ext.get("/api/v1/cards")
@@ -34,13 +34,7 @@ async def api_cards(
     return [card.dict() for card in await get_cards(wallet_ids)]
 
 
-@boltcards_ext.post("/api/v1/cards", status_code=HTTPStatus.CREATED)
-@boltcards_ext.put("/api/v1/cards/{card_id}", status_code=HTTPStatus.OK)
-async def api_card_create_or_update(
-    data: CreateCardData,
-    card_id: Optional[str],
-    wallet: WalletTypeInfo = Depends(require_admin_key),
-):
+def validate_card(data: CreateCardData):
     try:
         if len(bytes.fromhex(data.uid)) != 7:
             raise HTTPException(
@@ -61,37 +55,61 @@ async def api_card_create_or_update(
             raise HTTPException(
                 detail="Invalid bytes for k2.", status_code=HTTPStatus.BAD_REQUEST
             )
-    except:
+    except Exception:
         raise HTTPException(
             detail="Invalid byte data provided.", status_code=HTTPStatus.BAD_REQUEST
         )
-    if card_id:
-        card = await get_card(card_id)
-        if not card:
-            raise HTTPException(
-                detail="Card does not exist.", status_code=HTTPStatus.NOT_FOUND
-            )
-        if card.wallet != wallet.wallet.id:
-            raise HTTPException(
-                detail="Not your card.", status_code=HTTPStatus.FORBIDDEN
-            )
-        checkUid = await get_card_by_uid(data.uid)
-        if checkUid and checkUid.id != card_id:
-            raise HTTPException(
-                detail="UID already registered. Delete registered card and try again.",
-                status_code=HTTPStatus.BAD_REQUEST,
-            )
-        card = await update_card(card_id, **data.dict())
-    else:
-        checkUid = await get_card_by_uid(data.uid)
-        if checkUid:
-            raise HTTPException(
-                detail="UID already registered. Delete registered card and try again.",
-                status_code=HTTPStatus.BAD_REQUEST,
-            )
-        card = await create_card(wallet_id=wallet.wallet.id, data=data)
-    assert card
-    return card.dict()
+
+
+@boltcards_ext.put(
+    "/api/v1/cards/{card_id}",
+    status_code=HTTPStatus.OK,
+    dependencies=[Depends(validate_card)]
+)
+async def api_card_create_or_update(
+    data: CreateCardData,
+    card_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Card:
+
+    card = await get_card(card_id)
+    if not card:
+        raise HTTPException(
+            detail="Card does not exist.", status_code=HTTPStatus.NOT_FOUND
+        )
+    if card.wallet != wallet.wallet.id:
+        raise HTTPException(
+            detail="Not your card.", status_code=HTTPStatus.FORBIDDEN
+        )
+    checkUid = await get_card_by_uid(data.uid)
+    if checkUid and checkUid.id != card_id:
+        raise HTTPException(
+            detail="UID already registered. Delete registered card and try again.",
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+    card = await update_card(card_id, **data.dict())
+    assert card, "update_card should always return a card"
+    return card
+
+
+@boltcards_ext.post(
+    "/api/v1/cards",
+    status_code=HTTPStatus.CREATED,
+    dependencies=[Depends(validate_card)]
+)
+async def api_card_create(
+    data: CreateCardData,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Card:
+    checkUid = await get_card_by_uid(data.uid)
+    if checkUid:
+        raise HTTPException(
+            detail="UID already registered. Delete registered card and try again.",
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+    card = await create_card(wallet_id=wallet.wallet.id, data=data)
+    assert card, "create_card should always return a card"
+    return card
 
 
 @boltcards_ext.get("/api/v1/cards/enable/{card_id}/{enable}", status_code=HTTPStatus.OK)
