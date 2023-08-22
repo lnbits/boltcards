@@ -1,5 +1,5 @@
 {% extends "public.html" %} {% block toolbar_title %} Boltcard: ${
-    card.card_name }{% endblock %} {% block page %}
+card.card_name }{% endblock %} {% block page %}
 <div class="row q-col-gutter-md justify-center">
   <div class="col-12 col-md-6 col-lg-5 q-gutter-y-md">
     <q-card>
@@ -17,11 +17,19 @@
               <q-item-label lines="1">${item.label}</q-item-label>
               <q-item-label caption>${card[item.value]}</q-item-label>
             </q-item-section>
-            <q-item-section side>
+            <q-item-section
+              side
+              v-if="!['tx_limit', 'daily_limit'].includes(item.value)"
+            >
               <q-tooltip>Click to copy</q-tooltip>
-              <q-btn flat round icon="content_copy" @click="copyText(item.value)" />
+              <q-btn
+                flat
+                round
+                icon="content_copy"
+                @click="copyText(item.value)"
+              />
             </q-item-section>
-          </q-item>          
+          </q-item>
         </q-list>
       </q-card-section>
     </q-card>
@@ -38,16 +46,25 @@
       <q-card-section>
         <q-list>
           <q-item v-for="hit in hits">
+            <q-item-section avatar>
+              <q-icon
+                :name="hit.spent > 0 ? 'done_all' : 'done'"
+                :color="hit.spent > 0 ? 'green' : 'grey'"
+              />
+            </q-item-section>
             <q-item-section>
-              <q-item-label>Single line item</q-item-label>
+              <q-item-label
+                >ID: ${hit.id} ${refunds.some(r => r.hit_id == hit.id) ?
+                '(Refunded)' : null}</q-item-label
+              >
               <q-item-label caption lines="1">IP: ${hit.ip}</q-item-label>
             </q-item-section>
-    
+
             <q-item-section side top>
               <q-item-label caption>${hit.date}</q-item-label>
               <q-item-label caption>${hit.amount} sats</q-item-label>
             </q-item-section>
-          </q-item>       
+          </q-item>
         </q-list>
       </q-card-section>
     </q-card>
@@ -57,13 +74,13 @@
 {% endblock %}{% block scripts %}
 <script>
   const mapHits = obj => {
-  obj.date = Quasar.utils.date.formatDate(
-    new Date(obj.time * 1000),
-    'YYYY-MM-DD HH:mm'
-  )
+    obj.date = Quasar.utils.date.formatDate(
+      new Date(obj.time * 1000),
+      'YYYY-MM-DD HH:mm'
+    )
 
-  return obj
-}
+    return obj
+  }
   Vue.component(VueQrcode.name, VueQrcode)
 
   new Vue({
@@ -80,14 +97,6 @@
             value: 'uid'
           },
           {
-            label: 'Transaction Limit',
-            value: 'tx_limit'
-          },
-          {
-            label: 'Daily Limit',
-            value: 'daily_limit'
-          },
-          {
             label: 'Auth Key',
             value: 'k0'
           },
@@ -97,7 +106,15 @@
           },
           {
             label: 'File Key',
-            value: 'k2',
+            value: 'k2'
+          },
+          {
+            label: 'Transaction Limit',
+            value: 'tx_limit'
+          },
+          {
+            label: 'Daily Limit',
+            value: 'daily_limit'
           }
         ]
       }
@@ -105,11 +122,12 @@
     created() {
       this.card = JSON.parse('{{ card | tojson}}')
       let hits = JSON.parse('{{ hits | tojson}}')
+      let refunds = JSON.parse('{{ refunds | tojson}}')
+      this.refunds = refunds || []
       this.hits = hits.map(mapHits)
-      console.log(this.card, this.hits)
     },
     computed: {
-      enabled(){
+      enabled() {
         return this.card.enable ? 'Enabled' : 'Disabled'
       }
     },
