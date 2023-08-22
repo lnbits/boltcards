@@ -66,7 +66,7 @@ def validate_card(data: CreateCardData):
     status_code=HTTPStatus.OK,
     dependencies=[Depends(validate_card)]
 )
-async def api_card_create_or_update(
+async def api_card_update(
     data: CreateCardData,
     card_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
