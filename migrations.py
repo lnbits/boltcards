@@ -55,3 +55,12 @@ async def m001_initial(db):
         );
     """
     )
+
+
+async def m002_add_custom_message(db):
+    """
+    Adds column for custom message to be shown on scan.
+    """
+    await db.execute(
+        "ALTER TABLE boltcards.cards ADD COLUMN message TEXT NOT NULL"
+    )

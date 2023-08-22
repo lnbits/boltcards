@@ -265,6 +265,16 @@
           type="text"
           label="Card name "
         >
+        <q-input
+          filled
+          dense
+          emit-value
+          v-model.trim="cardDialog.data.message"
+          type="text"
+          label="Message"
+        >
+          <q-tooltip>Message to be shown on scan</q-tooltip>
+        </q-input>
         </q-input>
         <div class="row">
           <div class="col-10">

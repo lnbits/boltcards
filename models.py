@@ -14,6 +14,7 @@ class Card(BaseModel):
     id: str
     wallet: str
     card_name: str
+    message: str
     uid: str
     external_id: str
     counter: int
@@ -43,6 +44,7 @@ class Card(BaseModel):
 
 class CreateCardData(BaseModel):
     card_name: str = Query(...)
+    message: str = Query(...)
     uid: str = Query(...)
     counter: int = Query(0)
     tx_limit: int = Query(0)
