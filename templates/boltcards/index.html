@@ -43,6 +43,7 @@
           <template v-slot:header="props">
             <q-tr :props="props">
               <q-th auto-width></q-th>
+              <q-th auto-width></q-th>
               <q-th v-for="col in props.cols" :key="col.name" :props="props">
                 {{ col.label }}
               </q-th>
@@ -62,6 +63,19 @@
                   @click="openQrCodeDialog(props.row.id, false)"
                 >
                   <q-tooltip>Card key credentials</q-tooltip>
+                </q-btn>
+              </q-td>
+              <q-td auto-width>
+                <q-btn
+                  unelevated
+                  dense
+                  icon="query_stats"
+                  :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
+                  type="a"
+                  :href="'/boltcards/' + props.row.external_id"
+                  target="_blank"
+                >
+                  <q-tooltip>Card Stats</q-tooltip>
                 </q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">

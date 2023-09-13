@@ -4,16 +4,14 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  release:
+    name: Release pushed tag
+    runs-on: ubuntu-22.04
     steps:
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
+      - uses: actions/checkout@v3
+      - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" --generate-notes
