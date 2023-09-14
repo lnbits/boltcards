@@ -90,7 +90,7 @@ async def api_scan(p, c, request: Request, external_id: str):
         "minWithdrawable": 1 * 1000,
         "maxWithdrawable": card.tx_limit * 1000,
         "defaultDescription": f"Boltcard (refund address lnurl://{lnurlpay_bech32})",
-        "payLink": lnurlpay_nonbech32_lud17, #LUD-19 compatibility
+        "payLink": lnurlpay_nonbech32_lud17,  # LUD-19 compatibility
     }
 
 
