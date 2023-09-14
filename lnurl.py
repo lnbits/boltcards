@@ -76,13 +76,12 @@ async def api_scan(p, c, request: Request, external_id: str):
         return {"status": "ERROR", "reason": "Max daily limit spent."}
     hit = await create_hit(card.id, ip, agent, card.counter, ctr_int)
 
-    #the raw lnurl
+    # the raw lnurl
     lnurlpay_raw = str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id))
-    #bech32 encoded lnurl
+    # bech32 encoded lnurl
     lnurlpay_bech32 = lnurl_encode(lnurlpay_raw)
-    #create a lud17 lnurlp to support lud19, add to payLink field of the withdrawRequest
+    # create a lud17 lnurlp to support lud19, add to payLink field of the withdrawRequest
     lnurlpay_nonbech32_lud17 = lnurlpay_raw.replace("https://", "lnurlp://").replace("http://","lnurlp://")
-
 
     return {
         "tag": "withdrawRequest",
