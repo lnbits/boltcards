@@ -4,13 +4,12 @@
 
 This extension allows you to link your [Bolt Card](https://github.com/boltcard) (or other compatible NXP NTAG424 DNA device) with a LNbits instance and use it in a more secure way than a static LNURLw.
 
-A technology called [Secure Unique NFC](https://web.archive.org/web/20220706134959/https://mishka-scan.com/blog/secure-unique-nfc) is utilized in this workflow.
+<a class="text-secondary" href="https://youtu.be/_sW7miqaXJc">Video Tutorial</a>
 
-<a class="text-secondary" href="https://www.youtube.com/watch?v=wJ7QLFTRjK0">Video Tutorial</a>
 
-**Disclaimer:** ***Use this only if you either know what you are doing or are a reckless lightning pioneer. Only you are responsible for all your sats, cards and other devices. Always backup all your card keys!***
+**Disclaimer:** ***Use this only if you either know what you are doing or are a reckless lightning pioneer. 
+Only you are responsible for all your sats, cards and other devices. Always backup all your card keys!***
 
-***In order to use this extension you need to be able to setup your own card.*** 
 
 For the easy way you need:
 
@@ -21,24 +20,13 @@ For the easy way you need:
 
 If you want to gift a Boltcard, make sure to [include the following data](https://www.figma.com/proto/OH6aGCxH45vNpKsZ2nD96S/Untitled?node-id=6%3A37&scaling=min-zoom&page-id=0%3A1) in your present, so that the user is able to make full use of it.
 
-## About the keys
-
-Up to five 16-byte keys can be stored on the card, numbered from 00 to 04. In the empty state they all should be set to zeros (00000000000000000000000000000000). For this extension only two keys need to be set, but for the security reasons all five keys should be changed from default (empty) state. The keys directly needed by this extension are:
-
-- One for encrypting the card UID and the counter (p parameter), let's called it meta key, key #01 or K1.
-
-- One for calculating CMAC (c parameter), let's called it file key, key #02 or K2.
-
-The key #00, K0 (also know as auth key) is used as authentification key. It is not directly needed by this extension, but should be filled in order to write the keys in cooperation with Boltcard NFC Card Creator. In this case also K3 is set to same value as K1 and K4 as K2, so all keys are changed from default values. Keep that in your mind in case you ever need to reset the keys manually.
-
 ***Always backup all keys that you're trying to write on the card. Without them you may not be able to change them in the future!***
 
 
 ## Setting the card - Boltcard NFC Card Creator (easy way)
-Updated for v0.1.9
 
 - Add new card in the extension.
-    - Set a max sats per transaction. Any transaction greater than this amount will be rejected.
+    - Set a max sats per transaction. Any transaction greater than this amount will be rejected. This is usually set higher than the funds in the wallet are to prevent accidential withdraws.
     - Set a max sats per day. After the card spends this amount of sats in a day, additional transactions will be rejected.
     - Set a card name. This is just for your reference inside LNbits.
     - Set the card UID. This is the unique identifier of your NFC card and is 7 bytes.
@@ -69,7 +57,22 @@ Since v0.1.2 of Boltcard NFC Card Creator it is possible not only to reset the k
 
 If you somehow find yourself in some non-standard state (for instance only k3 and k4 remains filled after previous unsuccessful reset), then you need to edit the key fields manually (for instance leave k0-k2 to zeroes and provide the right k3 and k4).
 
-## Setting the card - computer (hard way)
+
+## Setting the card (advanced)
+
+A technology called [Secure Unique NFC](https://web.archive.org/web/20220706134959/https://mishka-scan.com/blog/secure-unique-nfc) is utilized in this workflow.
+
+### About the keys
+
+Up to five 16-byte keys can be stored on the card, numbered from 00 to 04. In the empty state they all should be set to zeros (00000000000000000000000000000000). For this extension only two keys need to be set, but for the security reasons all five keys should be changed from default (empty) state. The keys directly needed by this extension are:
+
+- One for encrypting the card UID and the counter (p parameter), let's called it meta key, key #01 or K1.
+
+- One for calculating CMAC (c parameter), let's called it file key, key #02 or K2.
+
+The key #00, K0 (also know as auth key) is used as authentification key. It is not directly needed by this extension, but should be filled in order to write the keys in cooperation with Boltcard NFC Card Creator. In this case also K3 is set to same value as K1 and K4 as K2, so all keys are changed from default values. Keep that in your mind in case you ever need to reset the keys manually.
+
+### The writing process
 
 There's also a more [advanced guide](https://www.whitewolftech.com/articles/payment-card/) to set cards up manually with a card reader connected to your computer. 
 Writing can also be done (without setting the keys) via the [TagWriter app by NXP](https://play.google.com/store/apps/details?id=com.nxp.nfc.tagwriter) on Android. 
@@ -78,10 +81,8 @@ The URI should be `lnurlw://YOUR_LNBITS_DOMAIN/boltcards/api/v1/scan/{YOUR_card_
 
 Then fill up the card parameters in the extension. Card Auth key (K0) can be filled in the extension just for the record. Initical counter can be 0.
 
-## Setting the card - android NXP app (hard way)
-- If you don't know the card ID, use NXP TagInfo app to find it out.
-- In the TagWriter app tap Write tags
-- New Data Set > Link
+- If you don't know the card ID, use NXP TagInfo app to read it first.
+- Tap Write tags > New Data Set > Link
 - Set URI type to Custom URL
 - URL should look like `lnurlw://YOUR_LNBITS_DOMAIN/boltcards/api/v1/scan/{YOUR_card_external_id}?p=00000000000000000000000000000000&c=0000000000000000`
 - click Configure mirroring options
