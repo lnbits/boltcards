@@ -1,8 +1,8 @@
-# Bolt Cards (NXP NTAG424) - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
+# Bolt Cards - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
 <small>For more about LNBits extensions check [this tutorial](https://youtu.be/_sW7miqaXJc)</small>
 
 
-This extension allows you to link your [Bolt Card](https://github.com/boltcard) (or other compatible NXP NTAG424 DNA device) with a LNbits instance and use it in a more secure way than a static LNURLw.
+This extension allows you to link your [Bolt Card](https://github.com/boltcard) on a NXP NTAG424 DNA tag with a LNbits hub that generated new links on each tab which allows a better privacy and security than a static LNURLw that you can also write to a NFC tag (fromon NTAG 213) in the withdraw-extension e.g. for one-time usage as a gift-card. 
 
 <a class="text-secondary" href="https://youtu.be/_sW7miqaXJc">Video Tutorial</a>
 
