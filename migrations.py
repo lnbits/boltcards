@@ -55,3 +55,10 @@ async def m001_initial(db):
         );
     """
     )
+
+async def m002_remove_constraint_unique_uid(db):
+    """
+    Do not check the duplicate UID so remove the constraint from DB.
+    """
+
+    await db.execute("ALTER TABLE boltcards.cards DROP CONSTRAINT cards_uid_key;")
