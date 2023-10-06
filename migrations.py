@@ -83,8 +83,24 @@ async def m002_remove_constraint_unique_uid(db):
             + db.timestamp_now
             + """
         );
+        """
+    )
+    await db.execute(
+        """
         INSERT INTO boltcards.cardsnew SELECT * FROM boltcards.cards;
+        """
+    )
+    await db.execute(
+        """
         DROP TABLE boltcards.cards;
+        """
+    )
+    await db.execute(
+        """
         ALTER TABLE boltcards.cardsnew RENAME TO boltcards.cards;
         """
     )
+
+        
+        
+
