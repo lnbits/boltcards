@@ -60,5 +60,31 @@ async def m002_remove_constraint_unique_uid(db):
     """
     Do not check the duplicate UID so remove the constraint from DB.
     """
-
-    await db.execute("ALTER TABLE boltcards.cards DROP CONSTRAINT cards_uid_key;")
+    await db.execute(
+        """
+        CREATE TABLE cardsnew (
+            id TEXT PRIMARY KEY UNIQUE,
+            wallet TEXT NOT NULL,
+            card_name TEXT NOT NULL,
+            uid TEXT NOT NULL,
+            external_id TEXT NOT NULL UNIQUE,
+            counter INT NOT NULL DEFAULT 0,
+            tx_limit TEXT NOT NULL,
+            daily_limit TEXT NOT NULL,
+            enable BOOL NOT NULL,
+            k0 TEXT NOT NULL DEFAULT '00000000000000000000000000000000',
+            k1 TEXT NOT NULL DEFAULT '00000000000000000000000000000000',
+            k2 TEXT NOT NULL DEFAULT '00000000000000000000000000000000',
+            prev_k0 TEXT NOT NULL DEFAULT '00000000000000000000000000000000',
+            prev_k1 TEXT NOT NULL DEFAULT '00000000000000000000000000000000',
+            prev_k2 TEXT NOT NULL DEFAULT '00000000000000000000000000000000',
+            otp TEXT NOT NULL DEFAULT '',
+            time TIMESTAMP NOT NULL DEFAULT """
+            + db.timestamp_now
+            + """
+        );
+        INSERT INTO boltcards.cardsnew SELECT * FROM boltcards.cards;
+        DROP TABLE boltcards.cards;
+        ALTER TABLE boltcards.cardsnew RENAME TO boltcards.cards;
+        """
+    )
