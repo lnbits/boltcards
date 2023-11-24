@@ -28,6 +28,7 @@ class Card(BaseModel):
     prev_k2: str
     otp: str
     time: int
+    expiry_date: str
 
     @classmethod
     def from_row(cls, row: Row) -> "Card":
@@ -54,6 +55,7 @@ class CreateCardData(BaseModel):
     prev_k0: str = Query(ZERO_KEY)
     prev_k1: str = Query(ZERO_KEY)
     prev_k2: str = Query(ZERO_KEY)
+    expiry_date: str = Query("")
 
 
 class Hit(BaseModel):

@@ -1,11 +1,13 @@
 import json
 import secrets
+from datetime import datetime
 from http import HTTPStatus
 from urllib.parse import urlparse
 
 from fastapi import HTTPException, Query, Request
 from lnurl import encode as lnurl_encode
 from lnurl.types import LnurlPayMetadata
+from loguru import logger
 from starlette.responses import HTMLResponse
 
 from lnbits import bolt11
@@ -42,6 +44,13 @@ async def api_scan(p, c, request: Request, external_id: str):
         return {"status": "ERROR", "reason": "No card."}
     if not card.enable:
         return {"status": "ERROR", "reason": "Card is disabled."}
+    if card.expiry_date != "":
+        today = datetime.today()
+        logger.debug(f"today: {today}")
+        expiry_date = datetime.strptime(card.expiry_date, "%Y/%m/%d")
+        logger.debug(f"today: {expiry_date}")
+        if today > expiry_date:
+            return {"status": "ERROR", "reason": "Card expired."}
     try:
         card_uid, counter = decryptSUN(bytes.fromhex(p), bytes.fromhex(card.k1))
         if card.uid.upper() != card_uid.hex().upper():

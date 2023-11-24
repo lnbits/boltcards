@@ -28,7 +28,9 @@ new Vue({
           k1: '',
           k2: '',
           uid: '',
-          card_name: ''
+          card_name: '',
+          toggleExpiry: false,
+          expiry_date: new Date().toISOString().slice(0, 10).replaceAll('-', '/')
         },
         temp: {}
       },
@@ -289,6 +291,7 @@ new Vue({
     },
     addCardOpen: function () {
       this.cardDialog.show = true
+      this.cardDialog.data.toggleExpiry = false
       this.generateKeys()
     },
     generateKeys: function () {
@@ -331,6 +334,10 @@ new Vue({
     createCard: function (wallet, data) {
       var self = this
 
+      if (!this.cardDialog.data.toggleExpiry) {
+        this.cardDialog.data.expiry_date = null
+      }
+
       LNbits.api
         .request('POST', '/boltcards/api/v1/cards', wallet.adminkey, data)
         .then(function (response) {
@@ -346,6 +353,8 @@ new Vue({
       var card = _.findWhere(this.cards, {id: formId})
       this.cardDialog.data = _.clone(card)
 
+      this.cardDialog.data.toggleExpiry = !!this.cardDialog.data.expiry_date
+      
       this.cardDialog.temp.k0 = this.cardDialog.data.k0
       this.cardDialog.temp.k1 = this.cardDialog.data.k1
       this.cardDialog.temp.k2 = this.cardDialog.data.k2
@@ -354,6 +363,10 @@ new Vue({
     },
     updateCard: function (wallet, data) {
       var self = this
+
+      if (!this.cardDialog.data.toggleExpiry) {
+        this.cardDialog.data.expiry_date = null
+      }
 
       if (
         this.cardDialog.temp.k0 != data.k0 ||
