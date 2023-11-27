@@ -34,8 +34,12 @@ If you want to gift a Boltcard, make sure to [include the following data](https:
         - Otherwise read it with the Bolt-Card app (Read NFC) and paste it to the field.
     - Advanced Options
         - Card Keys (k0, k1, k2) will be automatically generated if not explicitly set.
-            - Set to 16 bytes of 0s (00000000000000000000000000000000) to leave the keys in default (empty) state (this is unsecure).
+            - Set to 16 bytes of 0s (00000000000000000000000000000000) to leave the keys in default (empty) state (this is unsecure, merely for debuging).
             - GENERATE KEY button fill the keys randomly.
+    - Expiry date 
+        - You can set an expiry date on a card. After this date LNbits will not longer allow payment with this card. 
+        - You can enable, extend or disable expiry date anytime just by updating the card (without necessity of rewriting it physicaly). 
+        - Without an expiry date, the card is valid indefinitely. 
     - Click CREATE CARD button
 - Click the QR code button next to a card to view its details. Backup the keys now! They'll be comfortable in your password manager.
     - Now you can scan the QR code with the Boltcard app (Create Bolt Card -> SCAN QR CODE).

@@ -346,10 +346,10 @@
         </div>
 
         <q-toggle
-          v-model="cardDialog.data.toggleExpiry"
+          v-model="toggleExpiry"
           label="Set expiry date"
         ></q-toggle>
-        <div v-show="cardDialog.data.toggleExpiry" class="q-gutter-y-md">
+        <div v-show="toggleExpiry" class="q-gutter-y-md">
           <q-date v-model="cardDialog.data.expiry_date" />
         </div>
 
