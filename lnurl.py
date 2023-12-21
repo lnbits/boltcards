@@ -195,7 +195,7 @@ async def lnurlp_response(req: Request, hit_id: str):
         return {"status": "ERROR", "reason": "Card is disabled."}
     payResponse = {
         "tag": "payRequest",
-        "callback": req.url_for("boltcards.lnurlp_callback", hit_id=hit_id),
+        "callback": str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id)),
         "metadata": LnurlPayMetadata(json.dumps([["text/plain", "Refund"]])),
         "minSendable": 1 * 1000,
         "maxSendable": card.tx_limit * 1000,
