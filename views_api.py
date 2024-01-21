@@ -12,7 +12,6 @@ from .crud import (
     delete_card,
     enable_disable_card,
     get_card,
-    get_card_by_uid,
     get_cards,
     get_hits,
     get_refunds,
@@ -82,12 +81,6 @@ async def api_card_update(
         raise HTTPException(
             detail="Not your card.", status_code=HTTPStatus.FORBIDDEN
         )
-    checkUid = await get_card_by_uid(data.uid)
-    if checkUid and checkUid.id != card_id:
-        raise HTTPException(
-            detail="UID already registered. Delete registered card and try again.",
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
     card = await update_card(card_id, **data.dict())
     assert card, "update_card should always return a card"
     return card
@@ -102,12 +95,6 @@ async def api_card_create(
     data: CreateCardData,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Card:
-    checkUid = await get_card_by_uid(data.uid)
-    if checkUid:
-        raise HTTPException(
-            detail="UID already registered. Delete registered card and try again.",
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
     card = await create_card(wallet_id=wallet.wallet.id, data=data)
     assert card, "create_card should always return a card"
     return card
