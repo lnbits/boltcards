@@ -80,6 +80,6 @@ async def m004_add_features(db):
 async def m005_add_features(db):
     await db.execute(
         """
-        ALTER TABLE boltcards.cards ADD limit_type TEXT NOT NULL DEFAULT "sats";
+        ALTER TABLE boltcards.cards ADD limit_type TEXT NOT NULL DEFAULT 'sats';
     """
     )
