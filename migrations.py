@@ -55,3 +55,10 @@ async def m001_initial(db):
         );
     """
     )
+
+async def m002_add_features(db):
+    await db.execute(
+        """
+        ALTER TABLE boltcards.cards ADD expiration_date DATE NULL;
+    """
+    )

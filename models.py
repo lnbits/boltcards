@@ -6,6 +6,7 @@ from lnurl import Lnurl
 from lnurl import encode as lnurl_encode
 from lnurl.types import LnurlPayMetadata
 from pydantic import BaseModel
+from pydantic.schema import Optional
 
 ZERO_KEY = "00000000000000000000000000000000"
 
@@ -28,6 +29,7 @@ class Card(BaseModel):
     prev_k2: str
     otp: str
     time: int
+    expiration_date: Optional[str]
 
     @classmethod
     def from_row(cls, row: Row) -> "Card":
@@ -54,7 +56,7 @@ class CreateCardData(BaseModel):
     prev_k0: str = Query(ZERO_KEY)
     prev_k1: str = Query(ZERO_KEY)
     prev_k2: str = Query(ZERO_KEY)
-
+    expiration_date: Optional[str]
 
 class Hit(BaseModel):
     id: str

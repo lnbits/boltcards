@@ -261,6 +261,15 @@
           filled
           dense
           emit-value
+          v-model.trim="cardDialog.data.expiration_date"
+          type="date"
+          label="Expiration Date"
+        >
+        </q-input>
+        <q-input
+          filled
+          dense
+          emit-value
           v-model.trim="cardDialog.data.card_name"
           type="text"
           label="Card name "

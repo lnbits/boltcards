@@ -63,6 +63,12 @@ new Vue({
             align: 'left',
             label: 'Daily tx limit',
             field: 'daily_limit'
+          },
+          {
+            name: 'expiration_date',
+            align: 'left',
+            label: 'Expiration Date',
+            field: 'expiration_date'
           }
         ],
         pagination: {
