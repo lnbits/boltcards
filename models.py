@@ -20,6 +20,8 @@ class Card(BaseModel):
     counter: int
     tx_limit: int
     daily_limit: int
+    monthly_limit: int
+    limit_type: str
     enable: bool
     k0: str
     k1: str
@@ -49,6 +51,8 @@ class CreateCardData(BaseModel):
     counter: int = Query(0)
     tx_limit: int = Query(0)
     daily_limit: int = Query(0)
+    monthly_limit: int = Query(0)
+    limit_type: str = Query("sats")
     enable: bool = Query(True)
     k0: str = Query(ZERO_KEY)
     k1: str = Query(ZERO_KEY)
@@ -68,6 +72,7 @@ class Hit(BaseModel):
     new_ctr: int
     amount: int
     time: int
+    payment_hash: Optional[str]
 
     @classmethod
     def from_row(cls, row: Row) -> "Hit":

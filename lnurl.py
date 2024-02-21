@@ -12,6 +12,9 @@ from starlette.responses import HTMLResponse
 from lnbits import bolt11
 from lnbits.core.services import create_invoice
 from lnbits.core.views.api import pay_invoice
+from lnbits.core.crud import (
+    get_standalone_payment,
+)
 
 from . import boltcards_ext
 from .crud import (
@@ -21,7 +24,9 @@ from .crud import (
     get_card_by_otp,
     get_hit,
     get_hits_today,
+    get_hits_this_month,
     spend_hit,
+    link_hit,
     update_card_counter,
     update_card_otp,
 )
@@ -43,7 +48,7 @@ async def api_scan(p, c, request: Request, external_id: str):
         return {"status": "ERROR", "reason": "No card."}
     if not card.enable:
         return {"status": "ERROR", "reason": "Card is disabled."}
-    if card.expiration_date is not None and datetime.strptime(card.expiration_date, '%Y-%m-%d') < datetime.now():
+    if card.expiration_date is not None and card.expiration_date != "" and datetime.strptime(card.expiration_date, '%Y-%m-%d') < datetime.now():
         return {"status": "ERROR", "reason": "Card is expired."}
     try:
         card_uid, counter = decryptSUN(bytes.fromhex(p), bytes.fromhex(card.k1))
@@ -74,9 +79,28 @@ async def api_scan(p, c, request: Request, external_id: str):
 
     hits_amount = 0
     for hit in todays_hits:
-        hits_amount = hits_amount + hit.amount
+        if card.limit_type == "fiat":
+            payment = await get_standalone_payment(checking_id_or_hash=hit.payment_hash, wallet_id=card.wallet)
+            if payment != None and payment.extra != None:
+                hits_amount = hits_amount + payment.extra.get("wallet_fiat_amount")
+        else:
+            hits_amount = hits_amount + hit.amount
     if hits_amount > card.daily_limit:
         return {"status": "ERROR", "reason": "Max daily limit spent."}
+
+    this_month_hits = await get_hits_this_month(card.id)
+
+    this_month_hits_amount = 0
+    for hit in this_month_hits:
+        if card.limit_type == "fiat":
+            payment = await get_standalone_payment(checking_id_or_hash=hit.payment_hash, wallet_id=card.wallet)
+            if payment != None and payment.extra != None:
+                this_month_hits_amount = this_month_hits_amount + payment.extra.get("wallet_fiat_amount")
+        else:
+            this_month_hits_amount = this_month_hits_amount + hit.amount
+    if this_month_hits_amount > card.monthly_limit:
+        return {"status": "ERROR", "reason": "Max monthly limit spent."}
+
     hit = await create_hit(card.id, ip, agent, card.counter, ctr_int)
 
     # the raw lnurl
@@ -129,15 +153,43 @@ async def lnurl_callback(
 
     card = await get_card(hit.card_id)
     assert card
+
+    todays_hits = await get_hits_today(card.id)
+
+    hits_amount = int(invoice.amount_msat / 1000)
+    for hit in todays_hits:
+        if card.limit_type == "fiat":
+            payment = await get_standalone_payment(checking_id_or_hash=hit.payment_hash, wallet_id=card.wallet)
+            if payment != None and payment.extra != None:
+                hits_amount = hits_amount + payment.extra.get("wallet_fiat_amount")
+        else:
+            hits_amount = hits_amount + hit.amount
+    if hits_amount > card.daily_limit:
+        return {"status": "ERROR", "reason": "Max daily limit spent."}
+
+    this_month_hits = await get_hits_this_month(card.id)
+
+    this_month_hits_amount = int(invoice.amount_msat / 1000)
+    for hit in this_month_hits:
+        if card.limit_type == "fiat":
+            payment = await get_standalone_payment(checking_id_or_hash=hit.payment_hash, wallet_id=card.wallet)
+            if payment != None and payment.extra != None:
+                this_month_hits_amount = this_month_hits_amount + payment.extra.get("wallet_fiat_amount")
+        else:
+            this_month_hits_amount = this_month_hits_amount + hit.amount
+    if this_month_hits_amount > card.monthly_limit:
+        return {"status": "ERROR", "reason": "Max monthly limit spent."}
+
     hit = await spend_hit(id=hit.id, amount=int(invoice.amount_msat / 1000))
     assert hit
     try:
-        await pay_invoice(
+        payment_hash = await pay_invoice(
             wallet_id=card.wallet,
             payment_request=pr,
             max_sat=card.tx_limit,
             extra={"tag": "boltcards", "hit": hit.id},
         )
+        await link_hit(id=hit.id, hash=payment_hash)
         return {"status": "OK"}
     except Exception as exc:
         return {"status": "ERROR", "reason": f"Payment failed - {exc}"}

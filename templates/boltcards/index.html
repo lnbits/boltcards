@@ -234,15 +234,25 @@
           label="Wallet *"
         >
         </q-select>
+        <p>Limits</p>
+        <q-input
+          filled
+          dense
+          emit-value
+          v-model.trim="cardDialog.data.tx_limit"
+          type="number"
+          label="Per transaction (sats)"
+          class="q-pr-sm"
+        ></q-input>
         <div class="row">
           <div class="col">
             <q-input
               filled
               dense
               emit-value
-              v-model.trim="cardDialog.data.tx_limit"
+              v-model.trim="cardDialog.data.daily_limit"
               type="number"
-              label="Max transaction (sats)"
+              label="Per Day"
               class="q-pr-sm"
             ></q-input>
           </div>
@@ -251,21 +261,32 @@
               filled
               dense
               emit-value
-              v-model.trim="cardDialog.data.daily_limit"
+              v-model.trim="cardDialog.data.monthly_limit"
               type="number"
-              label="Daily limit (sats)"
+              label="Per Month"
+              class="q-pr-sm"
             ></q-input>
           </div>
+          <div class="col">
+             <q-select
+                filled
+                dense
+                emit-value
+                v-model="cardDialog.data.limit_type"
+                :options="['sats', 'fiat']"
+                label="Limit Type"
+              >
+              </q-select>
+          </div>
         </div>
-        <q-input
-          filled
-          dense
+        <q-date
           emit-value
+          landscape
           v-model.trim="cardDialog.data.expiration_date"
-          type="date"
-          label="Expiration Date"
+          mask="YYYY-MM-DD"
+          title="Expiry"
         >
-        </q-input>
+        </q-date>
         <q-input
           filled
           dense
