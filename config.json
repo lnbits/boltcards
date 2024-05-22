@@ -2,6 +2,71 @@
   "name": "Bolt Cards",
   "short_description": "Self custody Bolt Cards with one time LNURLw",
   "tile": "/boltcards/static/image/boltcard.png",
-  "contributors": ["iwarpbtc", "arcbtc", "leesalminen"],
-  "min_lnbits_version": "0.11.0"
+  "min_lnbits_version": "0.12.5",
+  "contributors": [
+    {
+      "name": "dni",
+      "uri": "https://github.com/dni",
+      "role": "Developer"
+    },
+    {
+      "name": "prusnak",
+      "uri": "https://github.com/prusnak",
+      "role": "Developer"
+    },
+    {
+      "name": "talvasconcelos",
+      "uri": "https://github.com/talvasconcelos",
+      "role": "Developer"
+    },
+    {
+      "name": "arbadacarbaYK",
+      "uri": "https://github.com/arbadacarbaYK",
+      "role": "Developer"
+    },
+    {
+      "name": "gorrdy",
+      "uri": "https://github.com/gorrdy",
+      "role": "Developer"
+    },
+    {
+      "name": "BilligsterUser",
+      "uri": "https://github.com/BilligsterUser",
+      "role": "Developer"
+    },
+    {
+      "name": "iwarpbtc",
+      "uri": "https://github.com/iwarpbtc",
+      "role": "Developer"
+    },
+    {
+      "name": "arcbtc",
+      "uri": "https://github.com/arcbtc",
+      "role": "Developer"
+    },
+    {
+      "name": "leesalminen",
+      "uri": "https://github.com/leesalminen",
+      "role": "Developer"
+    }
+  ],
+  "images": [
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/boltcards/main/static/image/1.jpg",
+      "link": "https://www.youtube.com/embed/_sW7miqaXJc?si=UlFX7yU2A_LkC70r"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/boltcards/main/static/image/2.jpg",
+      "link": "https://www.youtube.com/embed/wJ7QLFTRjK0?si=DRNH9ycKZrCLjFcx"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/boltcards/main/static/image/1.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/boltcards/main/static/image/3.jpg"
+    }
+  ],
+  "description_md": "https://raw.githubusercontent.com/lnbits/boltcards/main/description.md",
+  "terms_and_conditions_md": "https://raw.githubusercontent.com/lnbits/boltcards/main/toc.md",
+  "license": "MIT"
 }

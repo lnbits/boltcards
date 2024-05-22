@@ -1,10 +1,10 @@
 import asyncio
+from loguru import logger
 
 from fastapi import APIRouter
-
 from lnbits.db import Database
 from lnbits.helpers import template_renderer
-from lnbits.tasks import catch_everything_and_restart
+from lnbits.tasks import create_permanent_unique_task
 
 db = Database("ext_boltcards")
 
@@ -25,10 +25,20 @@ def boltcards_renderer():
 from .lnurl import *  # noqa: F401,F403
 from .tasks import *  # noqa: F401,F403
 
+scheduled_tasks: list[asyncio.Task] = []
+
+
+def boltcards_stop():
+    for task in scheduled_tasks:
+        try:
+            task.cancel()
+        except Exception as ex:
+            logger.warning(ex)
+
 
 def boltcards_start():
-    loop = asyncio.get_event_loop()
-    loop.create_task(catch_everything_and_restart(wait_for_paid_invoices))  # noqa: F405
+    task = create_permanent_unique_task("ext_boltcards", wait_for_paid_invoices)
+    scheduled_tasks.append(task)
 
 
 from .views import *  # noqa: F401,F403
