@@ -14,6 +14,7 @@ from lnbits.core.services import create_invoice, calculate_fiat_amounts
 from lnbits.core.views.api import pay_invoice
 from lnbits.core.crud import (
     get_standalone_payment,
+    get_wallet,
 )
 
 from . import boltcards_ext
@@ -33,6 +34,47 @@ from .crud import (
 from .nxp424 import decryptSUN, getSunMAC
 
 ###############LNURLWITHDRAW#################
+
+
+@boltcards_ext.get("/api/v1/balance/{external_id}")
+async def api_balance(p, c, request: Request, external_id: str):
+    # some wallets send everything as lower case, no bueno
+    p = p.upper()
+    c = c.upper()
+    card = None
+    counter = b""
+    card = await get_card_by_external_id(external_id)
+    if not card:
+        return {"status": "ERROR", "reason": "No card."}
+    if not card.enable:
+        return {"status": "ERROR", "reason": "Card is disabled."}
+    if card.expiration_date is not None and card.expiration_date != "" and datetime.strptime(card.expiration_date, '%Y-%m-%d') < datetime.now():
+        return {"status": "ERROR", "reason": "Card is expired."}
+    try:
+        card_uid, counter = decryptSUN(bytes.fromhex(p), bytes.fromhex(card.k1))
+        if card.uid.upper() != card_uid.hex().upper():
+            return {"status": "ERROR", "reason": "Card UID mis-match."}
+        if c != getSunMAC(card_uid, counter, bytes.fromhex(card.k2)).hex().upper():
+            return {"status": "ERROR", "reason": "CMAC does not check."}
+    except:
+        return {"status": "ERROR", "reason": "Error decrypting card."}
+
+    ctr_int = int.from_bytes(counter, "little")
+
+    if ctr_int <= card.counter:
+        return {"status": "ERROR", "reason": "This link is already used."}
+
+    await update_card_counter(ctr_int, card.id)
+
+    wallet = await get_wallet(card.wallet)
+    balance = 0
+
+    if wallet:
+        balance = wallet.balance_msat / 1000
+
+    return {
+        "balance": balance,
+    }
 
 
 # /boltcards/api/v1/scan?p=00000000000000000000000000000000&c=0000000000000000
