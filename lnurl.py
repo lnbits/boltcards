@@ -10,7 +10,7 @@ from lnurl.types import LnurlPayMetadata
 from starlette.responses import HTMLResponse
 
 from lnbits import bolt11
-from lnbits.core.services import create_invoice
+from lnbits.core.services import create_invoice, calculate_fiat_amounts
 from lnbits.core.views.api import pay_invoice
 from lnbits.core.crud import (
     get_standalone_payment,
@@ -156,7 +156,14 @@ async def lnurl_callback(
 
     todays_hits = await get_hits_today(card.id)
 
-    hits_amount = int(invoice.amount_msat / 1000)
+    hits_amount = 0
+
+    if card.limit_type == "fiat":
+        amount_sat, extra = await calculate_fiat_amounts(wallet_id=card.wallet, amount=invoice.amount_msat / 1000)
+        hits_amount = extra.get("wallet_fiat_amount")
+    else:
+        hits_amount = int(invoice.amount_msat / 1000)
+
     for hit in todays_hits:
         if card.limit_type == "fiat":
             payment = await get_standalone_payment(checking_id_or_hash=hit.payment_hash, wallet_id=card.wallet)
