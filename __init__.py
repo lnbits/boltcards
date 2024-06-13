@@ -6,20 +6,20 @@ from lnbits.db import Database
 from lnbits.helpers import template_renderer
 from lnbits.tasks import create_permanent_unique_task
 
-db = Database("ext_boltcards")
+db = Database("ext_dfxboltcards")
 
-boltcards_static_files = [
+dfxboltcards_static_files = [
     {
-        "path": "/boltcards/static",
-        "name": "boltcards_static",
+        "path": "/dfxboltcards/static",
+        "name": "dfxboltcards_static",
     }
 ]
 
-boltcards_ext: APIRouter = APIRouter(prefix="/boltcards", tags=["boltcards"])
+dfxboltcards_ext: APIRouter = APIRouter(prefix="/dfxboltcards", tags=["dfxboltcards"])
 
 
-def boltcards_renderer():
-    return template_renderer(["boltcards/templates"])
+def dfxboltcards_renderer():
+    return template_renderer(["dfxboltcards/templates"])
 
 
 from .lnurl import *  # noqa: F401,F403
@@ -28,7 +28,7 @@ from .tasks import *  # noqa: F401,F403
 scheduled_tasks: list[asyncio.Task] = []
 
 
-def boltcards_stop():
+def dfxboltcards_stop():
     for task in scheduled_tasks:
         try:
             task.cancel()
@@ -36,8 +36,8 @@ def boltcards_stop():
             logger.warning(ex)
 
 
-def boltcards_start():
-    task = create_permanent_unique_task("ext_boltcards", wait_for_paid_invoices)
+def dfxboltcards_start():
+    task = create_permanent_unique_task("ext_dfxboltcards", wait_for_paid_invoices)
     scheduled_tasks.append(task)
 
 

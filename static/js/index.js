@@ -16,7 +16,7 @@ new Vue({
     return {
       toggleAdvanced: false,
       nfcTagReading: false,
-      lnurlLink: `${window.location.host}/boltcards/api/v1/scan/`,
+      lnurlLink: `${window.location.host}/dfxboltcards/api/v1/scan/`,
       cards: [],
       hits: [],
       refunds: [],
@@ -219,7 +219,7 @@ new Vue({
       LNbits.api
         .request(
           'GET',
-          '/boltcards/api/v1/cards?all_wallets=true',
+          '/dfxboltcards/api/v1/cards?all_wallets=true',
           this.g.user.wallets[0].inkey
         )
         .then(function (response) {
@@ -236,7 +236,7 @@ new Vue({
       LNbits.api
         .request(
           'GET',
-          '/boltcards/api/v1/hits?all_wallets=true',
+          '/dfxboltcards/api/v1/hits?all_wallets=true',
           this.g.user.wallets[0].inkey
         )
         .then(function (response) {
@@ -251,7 +251,7 @@ new Vue({
       LNbits.api
         .request(
           'GET',
-          '/boltcards/api/v1/refunds?all_wallets=true',
+          '/dfxboltcards/api/v1/refunds?all_wallets=true',
           this.g.user.wallets[0].inkey
         )
         .then(function (response) {
@@ -264,7 +264,7 @@ new Vue({
       var card = _.findWhere(this.cards, {id: cardId})
       this.qrCodeDialog.data = {
         id: card.id,
-        link: window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp,
+        link: window.location.origin + '/dfxboltcards/api/v1/auth?a=' + card.otp,
         name: card.card_name,
         uid: card.uid,
         external_id: card.external_id,
@@ -332,7 +332,7 @@ new Vue({
       var self = this
 
       LNbits.api
-        .request('POST', '/boltcards/api/v1/cards', wallet.adminkey, data)
+        .request('POST', '/dfxboltcards/api/v1/cards', wallet.adminkey, data)
         .then(function (response) {
           self.cards.push(mapCards(response.data))
           self.cardDialog.show = false
@@ -368,7 +368,7 @@ new Vue({
       LNbits.api
         .request(
           'PUT',
-          '/boltcards/api/v1/cards/' + data.id,
+          '/dfxboltcards/api/v1/cards/' + data.id,
           wallet.adminkey,
           data
         )
@@ -392,7 +392,7 @@ new Vue({
       LNbits.api
         .request(
           'GET',
-          '/boltcards/api/v1/cards/enable/' + card_id + '/' + enable,
+          '/dfxboltcards/api/v1/cards/enable/' + card_id + '/' + enable,
           fullWallet.adminkey
         )
         .then(function (response) {
@@ -424,7 +424,7 @@ new Vue({
           LNbits.api
             .request(
               'DELETE',
-              '/boltcards/api/v1/cards/' + cardId,
+              '/dfxboltcards/api/v1/cards/' + cardId,
               _.findWhere(self.g.user.wallets, {id: cards.wallet}).adminkey
             )
             .then(function (response) {

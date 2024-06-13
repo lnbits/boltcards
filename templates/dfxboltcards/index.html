@@ -9,7 +9,7 @@
           <div class="col">
             <div class="row justify-start" style="width: 150px">
               <div class="col">
-                <h5 class="text-subtitle1 q-my-none">Cards</h5>
+                <h5 class="text-subtitle1 q-my-none">DFX Cards</h5>
               </div>
               <div class="col">
                 <q-btn
@@ -72,7 +72,7 @@
                   icon="query_stats"
                   :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
                   type="a"
-                  :href="'/boltcards/' + props.row.external_id"
+                  :href="'/dfxboltcards/' + props.row.external_id"
                   target="_blank"
                 >
                   <q-tooltip>Card Stats</q-tooltip>
@@ -212,12 +212,12 @@
     <q-card>
       <q-card-section>
         <h6 class="text-subtitle1 q-my-none">
-          {{SITE_TITLE}} Bolt Cards extension
+          {{SITE_TITLE}} DFX Bolt Cards extension
         </h6>
       </q-card-section>
       <q-card-section class="q-pa-none">
         <q-separator></q-separator>
-        <q-list> {% include "boltcards/_api_docs.html" %} </q-list>
+        <q-list> {% include "dfxboltcards/_api_docs.html" %} </q-list>
       </q-card-section>
     </q-card>
   </div>
@@ -481,5 +481,5 @@
 </div>
 
 {% endblock %} {% block scripts %} {{ window_vars(user) }}
-<script src="/boltcards/static/js/index.js"></script>
+<script src="/dfxboltcards/static/js/index.js"></script>
 {% endblock %}

@@ -12,7 +12,7 @@ from lnbits import bolt11
 from lnbits.core.services import create_invoice
 from lnbits.core.views.api import pay_invoice
 
-from . import boltcards_ext
+from . import dfxboltcards_ext
 from .crud import (
     create_hit,
     get_card,
@@ -29,8 +29,8 @@ from .nxp424 import decryptSUN, getSunMAC
 ###############LNURLWITHDRAW#################
 
 
-# /boltcards/api/v1/scan?p=00000000000000000000000000000000&c=0000000000000000
-@boltcards_ext.get("/api/v1/scan/{external_id}")
+# /dfxboltcards/api/v1/scan?p=00000000000000000000000000000000&c=0000000000000000
+@dfxboltcards_ext.get("/api/v1/scan/{external_id}")
 async def api_scan(p, c, request: Request, external_id: str):
     # some wallets send everything as lower case, no bueno
     p = p.upper()
@@ -77,7 +77,7 @@ async def api_scan(p, c, request: Request, external_id: str):
     hit = await create_hit(card.id, ip, agent, card.counter, ctr_int)
 
     # the raw lnurl
-    lnurlpay_raw = str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id))
+    lnurlpay_raw = str(request.url_for("dfxboltcards.lnurlp_response", hit_id=hit.id))
     # bech32 encoded lnurl
     lnurlpay_bech32 = lnurl_encode(lnurlpay_raw)
     # create a lud17 lnurlp to support lud19, add to payLink field of the withdrawRequest
@@ -85,7 +85,7 @@ async def api_scan(p, c, request: Request, external_id: str):
 
     return {
         "tag": "withdrawRequest",
-        "callback": str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id)),
+        "callback": str(request.url_for("dfxboltcards.lnurl_callback", hit_id=hit.id)),
         "k1": hit.id,
         "minWithdrawable": 1 * 1000,
         "maxWithdrawable": card.tx_limit * 1000,
@@ -94,10 +94,10 @@ async def api_scan(p, c, request: Request, external_id: str):
     }
 
 
-@boltcards_ext.get(
+@dfxboltcards_ext.get(
     "/api/v1/lnurl/cb/{hit_id}",
     status_code=HTTPStatus.OK,
-    name="boltcards.lnurl_callback",
+    name="dfxboltcards.lnurl_callback",
 )
 async def lnurl_callback(
     hit_id: str,
@@ -133,15 +133,15 @@ async def lnurl_callback(
             wallet_id=card.wallet,
             payment_request=pr,
             max_sat=card.tx_limit,
-            extra={"tag": "boltcards", "hit": hit.id},
+            extra={"tag": "dfxboltcards", "hit": hit.id},
         )
         return {"status": "OK"}
     except Exception as exc:
         return {"status": "ERROR", "reason": f"Payment failed - {exc}"}
 
 
-# /boltcards/api/v1/auth?a=00000000000000000000000000000000
-@boltcards_ext.get("/api/v1/auth")
+# /dfxboltcards/api/v1/auth?a=00000000000000000000000000000000
+@dfxboltcards_ext.get("/api/v1/auth")
 async def api_auth(a, request: Request):
     if a == "00000000000000000000000000000000":
         response = {"k0": "0" * 32, "k1": "1" * 32, "k2": "2" * 32}
@@ -157,7 +157,7 @@ async def api_auth(a, request: Request):
     await update_card_otp(new_otp, card.id)
 
     lnurlw_base = (
-        f"{urlparse(str(request.url)).netloc}/boltcards/api/v1/scan/{card.external_id}"
+        f"{urlparse(str(request.url)).netloc}/dfxboltcards/api/v1/scan/{card.external_id}"
     )
 
     response = {
@@ -179,10 +179,10 @@ async def api_auth(a, request: Request):
 ###############LNURLPAY REFUNDS#################
 
 
-@boltcards_ext.get(
+@dfxboltcards_ext.get(
     "/api/v1/lnurlp/{hit_id}",
     response_class=HTMLResponse,
-    name="boltcards.lnurlp_response",
+    name="dfxboltcards.lnurlp_response",
 )
 async def lnurlp_response(req: Request, hit_id: str):
     hit = await get_hit(hit_id)
@@ -195,7 +195,7 @@ async def lnurlp_response(req: Request, hit_id: str):
         return {"status": "ERROR", "reason": "Card is disabled."}
     payResponse = {
         "tag": "payRequest",
-        "callback": str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id)),
+        "callback": str(req.url_for("dfxboltcards.lnurlp_callback", hit_id=hit_id)),
         "metadata": LnurlPayMetadata(json.dumps([["text/plain", "Refund"]])),
         "minSendable": 1 * 1000,
         "maxSendable": card.tx_limit * 1000,
@@ -203,10 +203,10 @@ async def lnurlp_response(req: Request, hit_id: str):
     return json.dumps(payResponse)
 
 
-@boltcards_ext.get(
+@dfxboltcards_ext.get(
     "/api/v1/lnurlp/cb/{hit_id}",
     response_class=HTMLResponse,
-    name="boltcards.lnurlp_callback",
+    name="dfxboltcards.lnurlp_callback",
 )
 async def lnurlp_callback(hit_id: str, amount: str = Query(None)):
     hit = await get_hit(hit_id)

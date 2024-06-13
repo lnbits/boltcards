@@ -14,7 +14,7 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
 
     await db.execute(
         """
-        INSERT INTO boltcards.cards (
+        INSERT INTO dfxboltcards.cards (
             id,
             uid,
             external_id,
@@ -59,10 +59,10 @@ async def update_card(card_id: str, **kwargs) -> Optional[Card]:
         kwargs["uid"] = kwargs["uid"].upper()
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
     await db.execute(
-        f"UPDATE boltcards.cards SET {q} WHERE id = ?",
+        f"UPDATE dfxboltcards.cards SET {q} WHERE id = ?",
         (*kwargs.values(), card_id),
     )
-    row = await db.fetchone("SELECT * FROM boltcards.cards WHERE id = ?", (card_id,))
+    row = await db.fetchone("SELECT * FROM dfxboltcards.cards WHERE id = ?", (card_id,))
     return Card(**row) if row else None
 
 
@@ -72,14 +72,14 @@ async def get_cards(wallet_ids: List[str]) -> List[Card]:
 
     q = ",".join(["?"] * len(wallet_ids))
     rows = await db.fetchall(
-        f"SELECT * FROM boltcards.cards WHERE wallet IN ({q})", (*wallet_ids,)
+        f"SELECT * FROM dfxboltcards.cards WHERE wallet IN ({q})", (*wallet_ids,)
     )
 
     return [Card(**row) for row in rows]
 
 
 async def get_card(card_id: str) -> Optional[Card]:
-    row = await db.fetchone("SELECT * FROM boltcards.cards WHERE id = ?", (card_id,))
+    row = await db.fetchone("SELECT * FROM dfxboltcards.cards WHERE id = ?", (card_id,))
     if not row:
         return None
 
@@ -90,7 +90,7 @@ async def get_card(card_id: str) -> Optional[Card]:
 
 async def get_card_by_uid(card_uid: str) -> Optional[Card]:
     row = await db.fetchone(
-        "SELECT * FROM boltcards.cards WHERE uid = ?", (card_uid.upper(),)
+        "SELECT * FROM dfxboltcards.cards WHERE uid = ?", (card_uid.upper(),)
     )
     if not row:
         return None
@@ -102,7 +102,7 @@ async def get_card_by_uid(card_uid: str) -> Optional[Card]:
 
 async def get_card_by_external_id(external_id: str) -> Optional[Card]:
     row = await db.fetchone(
-        "SELECT * FROM boltcards.cards WHERE external_id = ?", (external_id.lower(),)
+        "SELECT * FROM dfxboltcards.cards WHERE external_id = ?", (external_id.lower(),)
     )
     if not row:
         return None
@@ -113,7 +113,7 @@ async def get_card_by_external_id(external_id: str) -> Optional[Card]:
 
 
 async def get_card_by_otp(otp: str) -> Optional[Card]:
-    row = await db.fetchone("SELECT * FROM boltcards.cards WHERE otp = ?", (otp,))
+    row = await db.fetchone("SELECT * FROM dfxboltcards.cards WHERE otp = ?", (otp,))
     if not row:
         return None
 
@@ -124,29 +124,29 @@ async def get_card_by_otp(otp: str) -> Optional[Card]:
 
 async def delete_card(card_id: str) -> None:
     # Delete cards
-    await db.execute("DELETE FROM boltcards.cards WHERE id = ?", (card_id,))
+    await db.execute("DELETE FROM dfxboltcards.cards WHERE id = ?", (card_id,))
     # Delete hits
     hits = await get_hits([card_id])
     for hit in hits:
-        await db.execute("DELETE FROM boltcards.hits WHERE id = ?", (hit.id,))
+        await db.execute("DELETE FROM dfxboltcards.hits WHERE id = ?", (hit.id,))
         # Delete refunds
         refunds = await get_refunds([hit.id])
         for refund in refunds:
             await db.execute(
-                "DELETE FROM boltcards.refunds WHERE id = ?", (refund.hit_id,)
+                "DELETE FROM dfxboltcards.refunds WHERE id = ?", (refund.hit_id,)
             )
 
 
 async def update_card_counter(counter: int, id: str):
     await db.execute(
-        "UPDATE boltcards.cards SET counter = ? WHERE id = ?",
+        "UPDATE dfxboltcards.cards SET counter = ? WHERE id = ?",
         (counter, id),
     )
 
 
 async def enable_disable_card(enable: bool, id: str) -> Optional[Card]:
     await db.execute(
-        "UPDATE boltcards.cards SET enable = ? WHERE id = ?",
+        "UPDATE dfxboltcards.cards SET enable = ? WHERE id = ?",
         (enable, id),
     )
     return await get_card(id)
@@ -154,13 +154,13 @@ async def enable_disable_card(enable: bool, id: str) -> Optional[Card]:
 
 async def update_card_otp(otp: str, id: str):
     await db.execute(
-        "UPDATE boltcards.cards SET otp = ? WHERE id = ?",
+        "UPDATE dfxboltcards.cards SET otp = ? WHERE id = ?",
         (otp, id),
     )
 
 
 async def get_hit(hit_id: str) -> Optional[Hit]:
-    row = await db.fetchone("SELECT * FROM boltcards.hits WHERE id = ?", (hit_id,))
+    row = await db.fetchone("SELECT * FROM dfxboltcards.hits WHERE id = ?", (hit_id,))
     if not row:
         return None
 
@@ -175,7 +175,7 @@ async def get_hits(cards_ids: List[str]) -> List[Hit]:
 
     q = ",".join(["?"] * len(cards_ids))
     rows = await db.fetchall(
-        f"SELECT * FROM boltcards.hits WHERE card_id IN ({q})", (*cards_ids,)
+        f"SELECT * FROM dfxboltcards.hits WHERE card_id IN ({q})", (*cards_ids,)
     )
 
     return [Hit(**row) for row in rows]
@@ -183,7 +183,7 @@ async def get_hits(cards_ids: List[str]) -> List[Hit]:
 
 async def get_hits_today(card_id: str) -> List[Hit]:
     rows = await db.fetchall(
-        "SELECT * FROM boltcards.hits WHERE card_id = ?",
+        "SELECT * FROM dfxboltcards.hits WHERE card_id = ?",
         (card_id,),
     )
     updatedrow = []
@@ -196,7 +196,7 @@ async def get_hits_today(card_id: str) -> List[Hit]:
 
 async def spend_hit(id: str, amount: int):
     await db.execute(
-        "UPDATE boltcards.hits SET spent = ?, amount = ? WHERE id = ?",
+        "UPDATE dfxboltcards.hits SET spent = ?, amount = ? WHERE id = ?",
         (True, amount, id),
     )
     return await get_hit(id)
@@ -206,7 +206,7 @@ async def create_hit(card_id, ip, useragent, old_ctr, new_ctr) -> Hit:
     hit_id = urlsafe_short_hash()
     await db.execute(
         """
-        INSERT INTO boltcards.hits (
+        INSERT INTO dfxboltcards.hits (
             id,
             card_id,
             ip,
@@ -238,7 +238,7 @@ async def create_refund(hit_id, refund_amount) -> Refund:
     refund_id = urlsafe_short_hash()
     await db.execute(
         """
-        INSERT INTO boltcards.refunds (
+        INSERT INTO dfxboltcards.refunds (
             id,
             hit_id,
             refund_amount
@@ -258,7 +258,7 @@ async def create_refund(hit_id, refund_amount) -> Refund:
 
 async def get_refund(refund_id: str) -> Optional[Refund]:
     row = await db.fetchone(
-        "SELECT * FROM boltcards.refunds WHERE id = ?", (refund_id,)
+        "SELECT * FROM dfxboltcards.refunds WHERE id = ?", (refund_id,)
     )
     if not row:
         return None
@@ -272,7 +272,7 @@ async def get_refunds(hits_ids: List[str]) -> List[Refund]:
 
     q = ",".join(["?"] * len(hits_ids))
     rows = await db.fetchall(
-        f"SELECT * FROM boltcards.refunds WHERE hit_id IN ({q})", (*hits_ids,)
+        f"SELECT * FROM dfxboltcards.refunds WHERE hit_id IN ({q})", (*hits_ids,)
     )
 
     return [Refund(**row) for row in rows]

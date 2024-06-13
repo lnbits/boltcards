@@ -1,8 +1,8 @@
 {
   "repos": [
     {
-      "id": "boltcards",
-      "organisation": "lnbits",
+      "id": "dfxboltcards",
+      "organisation": "DFXswiss",
       "repository": "boltcards"
     }
   ]

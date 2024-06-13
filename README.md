@@ -77,14 +77,14 @@ The key #00, K0 (also know as auth key) is used as authentification key. It is n
 There's also a more [advanced guide](https://www.whitewolftech.com/articles/payment-card/) to set cards up manually with a card reader connected to your computer. 
 Writing can also be done (without setting the keys) via the [TagWriter app by NXP](https://play.google.com/store/apps/details?id=com.nxp.nfc.tagwriter) on Android. 
 
-The URI should be `lnurlw://YOUR_LNBITS_DOMAIN/boltcards/api/v1/scan/{YOUR_card_external_id}?p=00000000000000000000000000000000&c=0000000000000000`
+The URI should be `lnurlw://YOUR_LNBITS_DOMAIN/dfxboltcards/api/v1/scan/{YOUR_card_external_id}?p=00000000000000000000000000000000&c=0000000000000000`
 
 Then fill up the card parameters in the extension. Card Auth key (K0) can be filled in the extension just for the record. Initical counter can be 0.
 
 - If you don't know the card ID, use NXP TagInfo app to read it first.
 - Tap Write tags > New Data Set > Link
 - Set URI type to Custom URL
-- URL should look like `lnurlw://YOUR_LNBITS_DOMAIN/boltcards/api/v1/scan/{YOUR_card_external_id}?p=00000000000000000000000000000000&c=0000000000000000`
+- URL should look like `lnurlw://YOUR_LNBITS_DOMAIN/dfxboltcards/api/v1/scan/{YOUR_card_external_id}?p=00000000000000000000000000000000&c=0000000000000000`
 - click Configure mirroring options
 - Select Card Type NTAG 424 DNA
 - Check Enable SDM Mirroring
