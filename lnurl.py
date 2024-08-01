@@ -4,13 +4,13 @@ from http import HTTPStatus
 from urllib.parse import urlparse
 
 from fastapi import HTTPException, Query, Request
-from lnurl import encode as lnurl_encode
-from lnurl.types import LnurlPayMetadata
-from starlette.responses import HTMLResponse
-
 from lnbits import bolt11
 from lnbits.core.services import create_invoice
 from lnbits.core.views.api import pay_invoice
+from starlette.responses import HTMLResponse
+
+from lnurl import encode as lnurl_encode
+from lnurl.types import LnurlPayMetadata
 
 from . import boltcards_ext
 from .crud import (
@@ -81,7 +81,9 @@ async def api_scan(p, c, request: Request, external_id: str):
     # bech32 encoded lnurl
     lnurlpay_bech32 = lnurl_encode(lnurlpay_raw)
     # create a lud17 lnurlp to support lud19, add to payLink field of the withdrawRequest
-    lnurlpay_nonbech32_lud17 = lnurlpay_raw.replace("https://", "lnurlp://").replace("http://","lnurlp://")
+    lnurlpay_nonbech32_lud17 = lnurlpay_raw.replace("https://", "lnurlp://").replace(
+        "http://", "lnurlp://"
+    )
 
     return {
         "tag": "withdrawRequest",

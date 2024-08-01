@@ -1,8 +1,6 @@
 from http import HTTPStatus
-from typing import Optional
 
 from fastapi import Depends, HTTPException, Query
-
 from lnbits.core.crud import get_user
 from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
 
@@ -64,9 +62,8 @@ def validate_card(data: CreateCardData):
 @boltcards_ext.put(
     "/api/v1/cards/{card_id}",
     status_code=HTTPStatus.OK,
-    dependencies=[Depends(validate_card)]
+    dependencies=[Depends(validate_card)],
 )
-
 async def api_card_update(
     data: CreateCardData,
     card_id: str,
@@ -79,9 +76,7 @@ async def api_card_update(
             detail="Card does not exist.", status_code=HTTPStatus.NOT_FOUND
         )
     if card.wallet != wallet.wallet.id:
-        raise HTTPException(
-            detail="Not your card.", status_code=HTTPStatus.FORBIDDEN
-        )
+        raise HTTPException(detail="Not your card.", status_code=HTTPStatus.FORBIDDEN)
     checkUid = await get_card_by_uid(data.uid)
     if checkUid and checkUid.id != card_id:
         raise HTTPException(
@@ -96,7 +91,7 @@ async def api_card_update(
 @boltcards_ext.post(
     "/api/v1/cards",
     status_code=HTTPStatus.CREATED,
-    dependencies=[Depends(validate_card)]
+    dependencies=[Depends(validate_card)],
 )
 async def api_card_create(
     data: CreateCardData,

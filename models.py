@@ -2,10 +2,11 @@ import json
 from sqlite3 import Row
 
 from fastapi import Query, Request
+from pydantic import BaseModel
+
 from lnurl import Lnurl
 from lnurl import encode as lnurl_encode
 from lnurl.types import LnurlPayMetadata
-from pydantic import BaseModel
 
 ZERO_KEY = "00000000000000000000000000000000"
 
@@ -34,7 +35,9 @@ class Card(BaseModel):
         return cls(**dict(row))
 
     def lnurl(self, req: Request) -> Lnurl:
-        url = str(req.url_for("boltcard.lnurl_response", device_id=self.id, _external=True))
+        url = str(
+            req.url_for("boltcard.lnurl_response", device_id=self.id, _external=True)
+        )
         return lnurl_encode(url)
 
     async def lnurlpay_metadata(self) -> LnurlPayMetadata:

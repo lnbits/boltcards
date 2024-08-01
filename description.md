@@ -2,7 +2,7 @@ This extension enables you to link your Bolt Card to an NXP NTAG424 DNA tag via 
 
 For a simpler setup, you will need:
 
-* An LNbits instance accessible over clearnet.
-* Google Chrome browser opened on Android.
-* Boltcard extension installed on your LNbits wallet.
-* Boltcard NFC Card Creator App, available in the Apple or Play Store, to write your keys to the tags after they have been generated on LNbits.
+- An LNbits instance accessible over clearnet.
+- Google Chrome browser opened on Android.
+- Boltcard extension installed on your LNbits wallet.
+- Boltcard NFC Card Creator App, available in the Apple or Play Store, to write your keys to the tags after they have been generated on LNbits.
