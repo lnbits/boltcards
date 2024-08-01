@@ -2,11 +2,10 @@ import json
 from sqlite3 import Row
 
 from fastapi import Query, Request
-from pydantic import BaseModel
-
 from lnurl import Lnurl
 from lnurl import encode as lnurl_encode
 from lnurl.types import LnurlPayMetadata
+from pydantic import BaseModel
 
 ZERO_KEY = "00000000000000000000000000000000"
 

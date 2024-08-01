@@ -1,10 +1,10 @@
 from http import HTTPStatus
 
-from fastapi import Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from lnbits.core.crud import get_user
-from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
+from lnbits.core.models import WalletTypeInfo
+from lnbits.decorators import get_key_type, require_admin_key
 
-from . import boltcards_ext
 from .crud import (
     create_card,
     delete_card,
@@ -18,8 +18,10 @@ from .crud import (
 )
 from .models import Card, CreateCardData
 
+boltcards_api_router = APIRouter()
 
-@boltcards_ext.get("/api/v1/cards")
+
+@boltcards_api_router.get("/api/v1/cards")
 async def api_cards(
     g: WalletTypeInfo = Depends(get_key_type), all_wallets: bool = False
 ):
@@ -53,13 +55,13 @@ def validate_card(data: CreateCardData):
             raise HTTPException(
                 detail="Invalid bytes for k2.", status_code=HTTPStatus.BAD_REQUEST
             )
-    except Exception:
+    except Exception as exc:
         raise HTTPException(
             detail="Invalid byte data provided.", status_code=HTTPStatus.BAD_REQUEST
-        )
+        ) from exc
 
 
-@boltcards_ext.put(
+@boltcards_api_router.put(
     "/api/v1/cards/{card_id}",
     status_code=HTTPStatus.OK,
     dependencies=[Depends(validate_card)],
@@ -77,8 +79,8 @@ async def api_card_update(
         )
     if card.wallet != wallet.wallet.id:
         raise HTTPException(detail="Not your card.", status_code=HTTPStatus.FORBIDDEN)
-    checkUid = await get_card_by_uid(data.uid)
-    if checkUid and checkUid.id != card_id:
+    check_uid = await get_card_by_uid(data.uid)
+    if check_uid and check_uid.id != card_id:
         raise HTTPException(
             detail="UID already registered. Delete registered card and try again.",
             status_code=HTTPStatus.BAD_REQUEST,
@@ -88,7 +90,7 @@ async def api_card_update(
     return card
 
 
-@boltcards_ext.post(
+@boltcards_api_router.post(
     "/api/v1/cards",
     status_code=HTTPStatus.CREATED,
     dependencies=[Depends(validate_card)],
@@ -97,8 +99,8 @@ async def api_card_create(
     data: CreateCardData,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Card:
-    checkUid = await get_card_by_uid(data.uid)
-    if checkUid:
+    check_uid = await get_card_by_uid(data.uid)
+    if check_uid:
         raise HTTPException(
             detail="UID already registered. Delete registered card and try again.",
             status_code=HTTPStatus.BAD_REQUEST,
@@ -108,7 +110,9 @@ async def api_card_create(
     return card
 
 
-@boltcards_ext.get("/api/v1/cards/enable/{card_id}/{enable}", status_code=HTTPStatus.OK)
+@boltcards_api_router.get(
+    "/api/v1/cards/enable/{card_id}/{enable}", status_code=HTTPStatus.OK
+)
 async def enable_card(
     card_id,
     enable,
@@ -119,12 +123,12 @@ async def enable_card(
         raise HTTPException(detail="No card found.", status_code=HTTPStatus.NOT_FOUND)
     if card.wallet != wallet.wallet.id:
         raise HTTPException(detail="Not your card.", status_code=HTTPStatus.FORBIDDEN)
-    card = await enable_disable_card(enable=enable, id=card_id)
+    card = await enable_disable_card(enable=enable, card_id=card_id)
     assert card
     return card.dict()
 
 
-@boltcards_ext.delete("/api/v1/cards/{card_id}")
+@boltcards_api_router.delete("/api/v1/cards/{card_id}")
 async def api_card_delete(card_id, wallet: WalletTypeInfo = Depends(require_admin_key)):
     card = await get_card(card_id)
 
@@ -140,7 +144,7 @@ async def api_card_delete(card_id, wallet: WalletTypeInfo = Depends(require_admi
     return "", HTTPStatus.NO_CONTENT
 
 
-@boltcards_ext.get("/api/v1/hits")
+@boltcards_api_router.get("/api/v1/hits")
 async def api_hits(
     g: WalletTypeInfo = Depends(get_key_type), all_wallets: bool = Query(False)
 ):
@@ -158,7 +162,7 @@ async def api_hits(
     return [hit.dict() for hit in await get_hits(cards_ids)]
 
 
-@boltcards_ext.get("/api/v1/refunds")
+@boltcards_api_router.get("/api/v1/refunds")
 async def api_refunds(
     g: WalletTypeInfo = Depends(get_key_type), all_wallets: bool = Query(False)
 ):

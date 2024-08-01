@@ -2,10 +2,12 @@ import secrets
 from datetime import datetime
 from typing import List, Optional
 
+from lnbits.db import Database
 from lnbits.helpers import urlsafe_short_hash
 
-from . import db
 from .models import Card, CreateCardData, Hit, Refund
+
+db = Database("ext_boltcards")
 
 
 async def create_card(data: CreateCardData, wallet_id: str) -> Card:
@@ -137,25 +139,25 @@ async def delete_card(card_id: str) -> None:
             )
 
 
-async def update_card_counter(counter: int, id: str):
+async def update_card_counter(counter: int, card_id: str):
     await db.execute(
         "UPDATE boltcards.cards SET counter = ? WHERE id = ?",
-        (counter, id),
+        (counter, card_id),
     )
 
 
-async def enable_disable_card(enable: bool, id: str) -> Optional[Card]:
+async def enable_disable_card(enable: bool, card_id: str) -> Optional[Card]:
     await db.execute(
         "UPDATE boltcards.cards SET enable = ? WHERE id = ?",
-        (enable, id),
+        (enable, card_id),
     )
-    return await get_card(id)
+    return await get_card(card_id)
 
 
-async def update_card_otp(otp: str, id: str):
+async def update_card_otp(otp: str, card_id: str):
     await db.execute(
         "UPDATE boltcards.cards SET otp = ? WHERE id = ?",
-        (otp, id),
+        (otp, card_id),
     )
 
 
@@ -194,12 +196,12 @@ async def get_hits_today(card_id: str) -> List[Hit]:
     return [Hit(**row) for row in updatedrow]
 
 
-async def spend_hit(id: str, amount: int):
+async def spend_hit(card_id: str, amount: int):
     await db.execute(
         "UPDATE boltcards.hits SET spent = ?, amount = ? WHERE id = ?",
-        (True, amount, id),
+        (True, amount, card_id),
     )
-    return await get_hit(id)
+    return await get_hit(card_id)
 
 
 async def create_hit(card_id, ip, useragent, old_ctr, new_ctr) -> Hit:
