@@ -294,9 +294,8 @@ new Vue({
     generateKeys: function () {
       var self = this
       const genRanHex = size =>
-        [...Array(size)]
-          .map(() => Math.floor(Math.random() * 16).toString(16))
-          .join('')
+        crypto.getRandomValues(new Uint8Array(size / 2))
+          .reduce((acc, i) => acc + ('0' + i.toString(16)).slice(-2), '')
 
       debugcard =
         typeof this.cardDialog.data.card_name === 'string' &&
