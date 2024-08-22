@@ -23,13 +23,16 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
             counter,
             tx_limit,
             daily_limit,
+            monthly_limit,
+            limit_type,
             enable,
             k0,
             k1,
             k2,
-            otp
+            otp,
+            expiration_date
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             card_id,
@@ -40,11 +43,14 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
             data.counter,
             data.tx_limit,
             data.daily_limit,
+            data.monthly_limit,
+            data.limit_type,
             True,
             data.k0,
             data.k1,
             data.k2,
             secrets.token_hex(16),
+            data.expiration_date,
         ),
     )
     card = await get_card(card_id)
@@ -193,11 +199,31 @@ async def get_hits_today(card_id: str) -> List[Hit]:
 
     return [Hit(**row) for row in updatedrow]
 
+async def get_hits_this_month(card_id: str) -> List[Hit]:
+    rows = await db.fetchall(
+        "SELECT * FROM boltcards.hits WHERE card_id = ?",
+        (card_id,),
+    )
+    updatedrow = []
+    for row in rows:
+        if datetime.fromtimestamp(row.time).date() >= datetime.today().replace(day=1).date():
+            updatedrow.append(row)
+
+    return [Hit(**row) for row in updatedrow]
+
 
 async def spend_hit(id: str, amount: int):
     await db.execute(
         "UPDATE boltcards.hits SET spent = ?, amount = ? WHERE id = ?",
         (True, amount, id),
+    )
+    return await get_hit(id)
+
+
+async def link_hit(id: str, hash: str):
+    await db.execute(
+        "UPDATE boltcards.hits SET payment_hash = ? WHERE id = ?",
+        (hash, id),
     )
     return await get_hit(id)
 

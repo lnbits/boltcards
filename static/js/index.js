@@ -63,6 +63,24 @@ new Vue({
             align: 'left',
             label: 'Daily tx limit',
             field: 'daily_limit'
+          },
+          {
+            name: 'monthly_limit',
+            align: 'left',
+            label: 'Monthly tx limit',
+            field: 'monthly_limit'
+          },
+          {
+            name: 'limit_type',
+            align: 'left',
+            label: 'Limit type',
+            field: 'limit_type'
+          },
+          {
+            name: 'expiration_date',
+            align: 'left',
+            label: 'Expiration Date',
+            field: 'expiration_date'
           }
         ],
         pagination: {

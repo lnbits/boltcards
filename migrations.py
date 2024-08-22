@@ -55,3 +55,31 @@ async def m001_initial(db):
         );
     """
     )
+
+async def m002_add_features(db):
+    await db.execute(
+        """
+        ALTER TABLE boltcards.cards ADD expiration_date TEXT NULL;
+    """
+    )
+
+async def m003_add_features(db):
+    await db.execute(
+        """
+        ALTER TABLE boltcards.hits ADD payment_hash TEXT NULL;
+    """
+    )
+
+async def m004_add_features(db):
+    await db.execute(
+        """
+        ALTER TABLE boltcards.cards ADD monthly_limit TEXT NOT NULL DEFAULT 0;
+    """
+    )
+
+async def m005_add_features(db):
+    await db.execute(
+        """
+        ALTER TABLE boltcards.cards ADD limit_type TEXT NOT NULL DEFAULT 'sats';
+    """
+    )
