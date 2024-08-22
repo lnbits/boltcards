@@ -344,6 +344,15 @@
             >Generate keys</q-btn
           >
         </div>
+
+        <q-toggle
+          v-model="toggleExpiry"
+          label="Set expiry date"
+        ></q-toggle>
+        <div v-show="toggleExpiry" class="q-gutter-y-md">
+          <q-date v-model="cardDialog.data.expiry_date" />
+        </div>
+
         <div class="row q-mt-lg">
           <q-btn
             v-if="cardDialog.data.id"

@@ -55,3 +55,13 @@ async def m001_initial(db):
         );
     """
     )
+
+
+async def m002_add_expiry(db):
+    """
+    Special column for webhook endpoints that can be assigned
+    to each different invoice.
+    """
+
+    await db.execute("ALTER TABLE boltcards.cards ADD COLUMN expiry_date TEXT")
+    await db.execute("UPDATE boltcards.cards SET expiry_date = ''")

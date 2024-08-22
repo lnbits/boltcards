@@ -1,5 +1,6 @@
 import json
 import secrets
+from datetime import datetime
 from http import HTTPStatus
 from urllib.parse import urlparse
 
@@ -42,6 +43,14 @@ async def api_scan(p, c, request: Request, external_id: str):
         return {"status": "ERROR", "reason": "No card."}
     if not card.enable:
         return {"status": "ERROR", "reason": "Card is disabled."}
+    if card.expiry_date != "":
+        today = datetime.today()
+        try:
+            expiry_date = datetime.strptime(card.expiry_date, "%Y/%m/%d")
+        except:
+            return {"status": "ERROR", "reason": "Invalid expiry date."}
+        if today > expiry_date:
+            return {"status": "ERROR", "reason": "Card expired."}
     try:
         card_uid, counter = decryptSUN(bytes.fromhex(p), bytes.fromhex(card.k1))
         if card.uid.upper() != card_uid.hex().upper():
