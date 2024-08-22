@@ -295,7 +295,7 @@ new Vue({
       var self = this
       const genRandomHexBytes = size =>
         crypto.getRandomValues(new Uint8Array(size))
-          .reduce((acc, i) => acc + ('0' + i.toString(16)).slice(-2), '')
+          .reduce((acc, i) => acc + i.toString(16).padStart(2, '0'), '')
 
       debugcard =
         typeof this.cardDialog.data.card_name === 'string' &&
