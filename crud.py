@@ -87,7 +87,7 @@ async def get_card(card_id: str) -> Optional[Card]:
 
     return Card.parse_obj(card)
 
-
+"""
 async def get_card_by_uid(card_uid: str) -> Optional[Card]:
     row = await db.fetchone(
         "SELECT * FROM boltcards.cards WHERE uid = ?", (card_uid.upper(),)
@@ -98,7 +98,7 @@ async def get_card_by_uid(card_uid: str) -> Optional[Card]:
     card = dict(**row)
 
     return Card.parse_obj(card)
-
+"""
 
 async def get_card_by_external_id(external_id: str) -> Optional[Card]:
     row = await db.fetchone(
