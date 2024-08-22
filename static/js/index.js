@@ -293,8 +293,8 @@ new Vue({
     },
     generateKeys: function () {
       var self = this
-      const genRanHex = size =>
-        crypto.getRandomValues(new Uint8Array(size / 2))
+      const genRandomHexBytes = size =>
+        crypto.getRandomValues(new Uint8Array(size))
           .reduce((acc, i) => acc + ('0' + i.toString(16)).slice(-2), '')
 
       debugcard =
@@ -303,15 +303,15 @@ new Vue({
 
       self.cardDialog.data.k0 = debugcard
         ? '11111111111111111111111111111111'
-        : genRanHex(32)
+        : genRandomHexBytes(16)
 
       self.cardDialog.data.k1 = debugcard
         ? '22222222222222222222222222222222'
-        : genRanHex(32)
+        : genRandomHexBytes(16)
 
       self.cardDialog.data.k2 = debugcard
         ? '33333333333333333333333333333333'
-        : genRanHex(32)
+        : genRandomHexBytes(16)
     },
     closeFormDialog: function () {
       this.cardDialog.data = {}
