@@ -293,10 +293,9 @@ new Vue({
     },
     generateKeys: function () {
       var self = this
-      const genRanHex = size =>
-        [...Array(size)]
-          .map(() => Math.floor(Math.random() * 16).toString(16))
-          .join('')
+      const genRandomHexBytes = size =>
+        crypto.getRandomValues(new Uint8Array(size))
+          .reduce((acc, i) => acc + i.toString(16).padStart(2, '0'), '')
 
       debugcard =
         typeof this.cardDialog.data.card_name === 'string' &&
@@ -304,15 +303,15 @@ new Vue({
 
       self.cardDialog.data.k0 = debugcard
         ? '11111111111111111111111111111111'
-        : genRanHex(32)
+        : genRandomHexBytes(16)
 
       self.cardDialog.data.k1 = debugcard
         ? '22222222222222222222222222222222'
-        : genRanHex(32)
+        : genRandomHexBytes(16)
 
       self.cardDialog.data.k2 = debugcard
         ? '33333333333333333333333333333333'
-        : genRanHex(32)
+        : genRandomHexBytes(16)
     },
     closeFormDialog: function () {
       this.cardDialog.data = {}
