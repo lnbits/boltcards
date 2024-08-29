@@ -34,7 +34,9 @@ class Card(BaseModel):
         return cls(**dict(row))
 
     def lnurl(self, req: Request) -> Lnurl:
-        url = str(req.url_for("boltcard.lnurl_response", device_id=self.id, _external=True))
+        url = str(
+            req.url_for("boltcard.lnurl_response", device_id=self.id, _external=True)
+        )
         return lnurl_encode(url)
 
     async def lnurlpay_metadata(self) -> LnurlPayMetadata:
