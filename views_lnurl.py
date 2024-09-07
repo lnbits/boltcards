@@ -5,12 +5,11 @@ from urllib.parse import urlparse
 
 import bolt11
 from fastapi import APIRouter, HTTPException, Query, Request
+from lnbits.core.services import create_invoice, pay_invoice
 from lnurl import encode as lnurl_encode
 from lnurl.types import LnurlPayMetadata
 from loguru import logger
 from starlette.responses import HTMLResponse
-
-from lnbits.core.services import create_invoice, pay_invoice
 
 from .crud import (
     create_hit,
