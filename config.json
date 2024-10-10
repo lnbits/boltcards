@@ -2,7 +2,7 @@
   "name": "Bolt Cards",
   "short_description": "Self custody Bolt Cards with one time LNURLw",
   "tile": "/boltcards/static/image/boltcard.png",
-  "min_lnbits_version": "0.12.5",
+  "min_lnbits_version": "1.0.0",
   "contributors": [
     {
       "name": "dni",

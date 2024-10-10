@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.templating import Jinja2Templates
 from lnbits.core.models import User
 from lnbits.decorators import check_user_exists
 from lnbits.helpers import template_renderer
@@ -10,7 +9,6 @@ from starlette.responses import HTMLResponse
 
 from .crud import get_card_by_external_id, get_hits, get_refunds
 
-templates = Jinja2Templates(directory="templates")
 boltcards_generic_router = APIRouter()
 
 

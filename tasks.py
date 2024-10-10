@@ -2,7 +2,6 @@ import asyncio
 
 from lnbits.core.crud import update_payment_extra
 from lnbits.core.models import Payment
-from lnbits.helpers import get_current_extension_name
 from lnbits.tasks import register_invoice_listener
 
 from .crud import create_refund, get_hit
@@ -10,7 +9,7 @@ from .crud import create_refund, get_hit
 
 async def wait_for_paid_invoices():
     invoice_queue = asyncio.Queue()
-    register_invoice_listener(invoice_queue, get_current_extension_name())
+    register_invoice_listener(invoice_queue, "ext_boltcards")
 
     while True:
         payment = await invoice_queue.get()
@@ -19,7 +18,7 @@ async def wait_for_paid_invoices():
 
 async def on_invoice_paid(payment: Payment) -> None:
 
-    if not payment.extra.get("refund"):
+    if not payment.extra or not payment.extra.get("refund"):
         return
 
     if payment.extra.get("wh_status"):
