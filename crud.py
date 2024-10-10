@@ -1,9 +1,9 @@
 import secrets
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from lnbits.db import Database
-from lnbits.helpers import update_query, urlsafe_short_hash
+from lnbits.helpers import urlsafe_short_hash
 
 from .models import Card, CreateCardData, Hit, Refund
 
@@ -58,72 +58,54 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
 
 
 async def update_card(card_id: str, data: CreateCardData) -> Card:
-    await db.execute(
-        update_query("boltcards.cards", data),
-        {**data.dict(), "id": card_id},
+    card = Card(
+        id=card_id,
+        **data.dict(),
     )
-    row = await db.fetchone(
-        "SELECT * FROM boltcards.cards WHERE id = :id", {"id": card_id}
-    )
-    assert row, "Updated card couldn't be retrieved"
-    return Card(**row)
+    await db.update("boltcards.cards", card)
+    return card
 
 
-async def get_cards(wallet_ids: List[str]) -> List[Card]:
+async def get_cards(wallet_ids: list[str]) -> list[Card]:
     if len(wallet_ids) == 0:
         return []
     q = ",".join([f"'{wallet_id}'" for wallet_id in wallet_ids])
-    rows = await db.fetchall(f"SELECT * FROM boltcards.cards WHERE wallet IN ({q})")
-    return [Card(**row) for row in rows]
+    return await db.fetchall(
+        f"SELECT * FROM boltcards.cards WHERE wallet IN ({q})",
+        model=Card,
+    )
 
 
 async def get_card(card_id: str) -> Optional[Card]:
-    row = await db.fetchone(
-        "SELECT * FROM boltcards.cards WHERE id = :id", {"id": card_id}
+    return await db.fetchone(
+        "SELECT * FROM boltcards.cards WHERE id = :id",
+        {"id": card_id},
+        Card,
     )
-    if not row:
-        return None
-
-    card = dict(**row)
-
-    return Card.parse_obj(card)
 
 
 async def get_card_by_uid(card_uid: str) -> Optional[Card]:
-    row = await db.fetchone(
-        "SELECT * FROM boltcards.cards WHERE uid = :uid", {"uid": card_uid.upper()}
+    return await db.fetchone(
+        "SELECT * FROM boltcards.cards WHERE uid = :uid",
+        {"uid": card_uid.upper()},
+        Card,
     )
-    if not row:
-        return None
-
-    card = dict(**row)
-
-    return Card.parse_obj(card)
 
 
 async def get_card_by_external_id(external_id: str) -> Optional[Card]:
-    row = await db.fetchone(
+    return await db.fetchone(
         "SELECT * FROM boltcards.cards WHERE external_id = :ext_id",
         {"ext_id": external_id.lower()},
+        Card,
     )
-    if not row:
-        return None
-
-    card = dict(**row)
-
-    return Card.parse_obj(card)
 
 
 async def get_card_by_otp(otp: str) -> Optional[Card]:
-    row = await db.fetchone(
-        "SELECT * FROM boltcards.cards WHERE otp = :otp", {"otp": otp}
+    return await db.fetchone(
+        "SELECT * FROM boltcards.cards WHERE otp = :otp",
+        {"otp": otp},
+        Card,
     )
-    if not row:
-        return None
-
-    card = dict(**row)
-
-    return Card.parse_obj(card)
 
 
 async def delete_card(card_id: str) -> None:
@@ -164,37 +146,36 @@ async def update_card_otp(otp: str, card_id: str):
 
 
 async def get_hit(hit_id: str) -> Optional[Hit]:
-    row = await db.fetchone(
-        "SELECT * FROM boltcards.hits WHERE id = :id", {"id": hit_id}
+    return await db.fetchone(
+        "SELECT * FROM boltcards.hits WHERE id = :id",
+        {"id": hit_id},
+        Hit,
     )
-    if not row:
-        return None
-
-    hit = dict(**row)
-
-    return Hit.parse_obj(hit)
 
 
-async def get_hits(cards_ids: List[str]) -> List[Hit]:
+async def get_hits(cards_ids: list[str]) -> list[Hit]:
     if len(cards_ids) == 0:
         return []
 
     q = ",".join([f"'{card_id}'" for card_id in cards_ids])
-    rows = await db.fetchall(f"SELECT * FROM boltcards.hits WHERE card_id IN ({q})")
-    return [Hit(**row) for row in rows]
+    return await db.fetchall(
+        f"SELECT * FROM boltcards.hits WHERE card_id IN ({q})",
+        model=Hit,
+    )
 
 
-async def get_hits_today(card_id: str) -> List[Hit]:
+async def get_hits_today(card_id: str) -> list[Hit]:
     rows = await db.fetchall(
         "SELECT * FROM boltcards.hits WHERE card_id = :id",
         {"id": card_id},
+        Hit,
     )
     updatedrow = []
-    for row in rows:
-        if datetime.now().date() == datetime.fromtimestamp(row["time"]).date():
-            updatedrow.append(row)
+    for hit in rows:
+        if datetime.now().date() == datetime.fromtimestamp(hit.time).date():
+            updatedrow.append(hit)
 
-    return [Hit(**row) for row in updatedrow]
+    return updatedrow
 
 
 async def spend_hit(card_id: str, amount: int):
@@ -260,18 +241,18 @@ async def create_refund(hit_id, refund_amount) -> Refund:
 
 
 async def get_refund(refund_id: str) -> Optional[Refund]:
-    row = await db.fetchone(
-        "SELECT * FROM boltcards.refunds WHERE id = :id", {"id": refund_id}
+    return await db.fetchone(
+        "SELECT * FROM boltcards.refunds WHERE id = :id",
+        {"id": refund_id},
+        Refund,
     )
-    if not row:
-        return None
-    refund = dict(**row)
-    return Refund.parse_obj(refund)
 
 
-async def get_refunds(hits_ids: List[str]) -> List[Refund]:
+async def get_refunds(hits_ids: list[str]) -> list[Refund]:
     if len(hits_ids) == 0:
         return []
     q = ",".join([f"'{hit_id}'" for hit_id in hits_ids])
-    rows = await db.fetchall(f"SELECT * FROM boltcards.refunds WHERE hit_id IN ({q})")
-    return [Refund(**row) for row in rows]
+    return await db.fetchall(
+        f"SELECT * FROM boltcards.refunds WHERE hit_id IN ({q})",
+        model=Refund,
+    )
