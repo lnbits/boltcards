@@ -1,6 +1,6 @@
 import asyncio
 
-from lnbits.core.crud import update_payment_extra
+from lnbits.core.crud import update_payment
 from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
 
@@ -30,4 +30,4 @@ async def on_invoice_paid(payment: Payment) -> None:
     if hit:
         await create_refund(hit_id=hit.id, refund_amount=(payment.amount / 1000))
         payment.extra["wh_status"] = 1
-        await update_payment_extra(payment.payment_hash, payment.extra)
+        await update_payment(payment)

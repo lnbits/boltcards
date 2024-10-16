@@ -81,9 +81,8 @@ card.card_name }{% endblock %} {% block page %}
 
     return obj
   }
-  Vue.component(VueQrcode.name, VueQrcode)
 
-  new Vue({
+  window.app = Vue.createApp({
     el: '#vue',
     delimiters: ['${', '}'],
     mixins: [windowMixin],

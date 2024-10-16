@@ -1,7 +1,8 @@
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from lnbits.core.crud import get_user
+
+from lnbits.core.crud import get_user_by_id
 from lnbits.core.models import WalletTypeInfo
 from lnbits.decorators import require_admin_key, require_invoice_key
 
@@ -28,7 +29,7 @@ async def api_cards(
     wallet_ids = [key_info.wallet.id]
 
     if all_wallets:
-        user = await get_user(key_info.wallet.user)
+        user = await get_user_by_id(key_info.wallet.user)
         wallet_ids = user.wallet_ids if user else []
 
     return await get_cards(wallet_ids)
@@ -152,7 +153,7 @@ async def api_hits(
     wallet_ids = [key_info.wallet.id]
 
     if all_wallets:
-        user = await get_user(key_info.wallet.user)
+        user = await get_user_by_id(key_info.wallet.user)
         wallet_ids = user.wallet_ids if user else []
 
     cards = await get_cards(wallet_ids)
@@ -171,7 +172,7 @@ async def api_refunds(
     wallet_ids = [key_info.wallet.id]
 
     if all_wallets:
-        user = await get_user(key_info.wallet.user)
+        user = await get_user_by_id(key_info.wallet.user)
         wallet_ids = user.wallet_ids if user else []
 
     cards = await get_cards(wallet_ids)
