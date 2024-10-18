@@ -1,5 +1,3 @@
-Vue.component(VueQrcode.name, VueQrcode)
-
 const mapCards = obj => {
   obj.date = Quasar.utils.date.formatDate(
     new Date(obj.time * 1000),
@@ -9,7 +7,7 @@ const mapCards = obj => {
   return obj
 }
 
-new Vue({
+window.app = Vue.createApp({
   el: '#vue',
   mixins: [windowMixin],
   data: function () {
