@@ -899,18 +899,18 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "fastapi"
-version = "0.113.0"
+version = "0.115.2"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi-0.113.0-py3-none-any.whl", hash = "sha256:c8d364485b6361fb643d53920a18d58a696e189abcb901ec03b487e35774c476"},
-    {file = "fastapi-0.113.0.tar.gz", hash = "sha256:b7cf9684dc154dfc93f8b718e5850577b529889096518df44defa41e73caf50f"},
+    {file = "fastapi-0.115.2-py3-none-any.whl", hash = "sha256:61704c71286579cc5a598763905928f24ee98bfcc07aabe84cfefb98812bbc86"},
+    {file = "fastapi-0.115.2.tar.gz", hash = "sha256:3995739e0b09fa12f984bce8fa9ae197b35d433750d3d312422d846e283697ee"},
 ]
 
 [package.dependencies]
 pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0 || >2.0.0,<2.0.1 || >2.0.1,<2.1.0 || >2.1.0,<3.0.0"
-starlette = ">=0.37.2,<0.39.0"
+starlette = ">=0.37.2,<0.41.0"
 typing-extensions = ">=4.8.0"
 
 [package.extras]
@@ -1283,13 +1283,13 @@ rediscluster = ["redis (>=4.2.0,!=4.5.2,!=4.5.3)"]
 
 [[package]]
 name = "lnbits"
-version = "1.0.0rc4"
+version = "1.0.0rc5"
 description = "LNbits, free and open-source Lightning wallet and accounts system."
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "lnbits-1.0.0rc4-py3-none-any.whl", hash = "sha256:f21216cf57d23f4728697dac13121997fa2ad47e2a4a2f28a0a51b4b8579293b"},
-    {file = "lnbits-1.0.0rc4.tar.gz", hash = "sha256:e80e7af36f619242de615d36e7e8586b336577c50f5a196ca1738c4b0ce409b0"},
+    {file = "lnbits-1.0.0rc5-py3-none-any.whl", hash = "sha256:3107a9c6711720299add7880b62c020cbf34cee2486d47f2c3ddd3f6b4a76b9d"},
+    {file = "lnbits-1.0.0rc5.tar.gz", hash = "sha256:f5559efa5d9b81f89acc1510db052d6300b3e93e1d0acdc70204689501865a51"},
 ]
 
 [package.dependencies]
@@ -1302,7 +1302,7 @@ click = "8.1.7"
 ecdsa = "0.19.0"
 embit = "0.8.0"
 environs = "9.5.0"
-fastapi = "0.113.0"
+fastapi = "0.115.2"
 fastapi-sso = "0.15.0"
 grpcio = "1.66.1"
 httpx = "0.27.0"
@@ -1443,22 +1443,22 @@ files = [
 
 [[package]]
 name = "marshmallow"
-version = "3.22.0"
+version = "3.23.0"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "marshmallow-3.22.0-py3-none-any.whl", hash = "sha256:71a2dce49ef901c3f97ed296ae5051135fd3febd2bf43afe0ae9a82143a494d9"},
-    {file = "marshmallow-3.22.0.tar.gz", hash = "sha256:4972f529104a220bb8637d595aa4c9762afbe7f7a77d82dc58c1615d70c5823e"},
+    {file = "marshmallow-3.23.0-py3-none-any.whl", hash = "sha256:82f20a2397834fe6d9611b241f2f7e7b680ed89c49f84728a1ad937be6b4bdf4"},
+    {file = "marshmallow-3.23.0.tar.gz", hash = "sha256:98d8827a9f10c03d44ead298d2e99c6aea8197df18ccfad360dae7f89a50da2e"},
 ]
 
 [package.dependencies]
 packaging = ">=17.0"
 
 [package.extras]
-dev = ["marshmallow[tests]", "pre-commit (>=3.5,<4.0)", "tox"]
-docs = ["alabaster (==1.0.0)", "autodocsumm (==0.2.13)", "sphinx (==8.0.2)", "sphinx-issues (==4.1.0)", "sphinx-version-warning (==1.1.2)"]
-tests = ["pytest", "pytz", "simplejson"]
+dev = ["marshmallow[tests]", "pre-commit (>=3.5,<5.0)", "tox"]
+docs = ["alabaster (==1.0.0)", "autodocsumm (==0.2.13)", "sphinx (==8.1.3)", "sphinx-issues (==5.0.0)", "sphinx-version-warning (==1.1.2)"]
+tests = ["pytest", "simplejson"]
 
 [[package]]
 name = "mypy"
@@ -1828,13 +1828,13 @@ pyln-proto = ">=23"
 
 [[package]]
 name = "pyln-proto"
-version = "24.8.1"
+version = "24.8.2"
 description = "This package implements some of the Lightning Network protocol in pure python. It is intended for protocol testing and some minor tooling only. It is not deemed secure enough to handle any amount of real funds (you have been warned!)."
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pyln_proto-24.8.1-py3-none-any.whl", hash = "sha256:ea1eb15c8259eae010663c155f0f3e44235f249c320d65f39f53e63b8800c22c"},
-    {file = "pyln_proto-24.8.1.tar.gz", hash = "sha256:0f1d04186ce55d62c38ec814e189732c19603d352cb8c5850d131110217b0c60"},
+    {file = "pyln_proto-24.8.2-py3-none-any.whl", hash = "sha256:9c6c080c41fff40b119ea518fae37b1c8d4e917fa55389002afceffd4850ec98"},
+    {file = "pyln_proto-24.8.2.tar.gz", hash = "sha256:efa222284e2990f7227f0243acc0e9ec5acd3bb89bb66ecad9f7dfb22b09fc90"},
 ]
 
 [package.dependencies]
@@ -2265,13 +2265,13 @@ uvicorn = "*"
 
 [[package]]
 name = "starlette"
-version = "0.38.6"
+version = "0.40.0"
 description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "starlette-0.38.6-py3-none-any.whl", hash = "sha256:4517a1409e2e73ee4951214ba012052b9e16f60e90d73cfb06192c19203bbb05"},
-    {file = "starlette-0.38.6.tar.gz", hash = "sha256:863a1588f5574e70a821dadefb41e4881ea451a47a3cd1b4df359d4ffefe5ead"},
+    {file = "starlette-0.40.0-py3-none-any.whl", hash = "sha256:c494a22fae73805376ea6bf88439783ecfba9aac88a43911b48c653437e784c4"},
+    {file = "starlette-0.40.0.tar.gz", hash = "sha256:1a3139688fb298ce5e2d661d37046a66ad996ce94be4d4983be019a23a04ea35"},
 ]
 
 [package.dependencies]
@@ -2385,13 +2385,13 @@ test = ["Cython (>=0.29.36,<0.30.0)", "aiohttp (==3.9.0b0)", "aiohttp (>=3.8.1)"
 
 [[package]]
 name = "virtualenv"
-version = "20.26.6"
+version = "20.27.0"
 description = "Virtual Python Environment builder"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "virtualenv-20.26.6-py3-none-any.whl", hash = "sha256:7345cc5b25405607a624d8418154577459c3e0277f5466dd79c49d5e492995f2"},
-    {file = "virtualenv-20.26.6.tar.gz", hash = "sha256:280aede09a2a5c317e409a00102e7077c6432c5a38f0ef938e643805a7ad2c48"},
+    {file = "virtualenv-20.27.0-py3-none-any.whl", hash = "sha256:44a72c29cceb0ee08f300b314848c86e57bf8d1f13107a5e671fb9274138d655"},
+    {file = "virtualenv-20.27.0.tar.gz", hash = "sha256:2ca56a68ed615b8fe4326d11a0dca5dfbe8fd68510fb6c6349163bed3c15f2b2"},
 ]
 
 [package.dependencies]
