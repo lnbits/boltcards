@@ -132,8 +132,8 @@ card.card_name }{% endblock %} {% block page %}
     },
     methods: {
       copyText(text, message, position) {
-        Quasar.utils.copyToClipboard(text).then(() => {
-          this.$q.notify({
+        Quasar.copyToClipboard(text).then(() => {
+          Quasar.Notify.create({
             message: message || 'Copied to clipboard!',
             position: position || 'bottom'
           })
