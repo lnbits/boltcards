@@ -9,7 +9,7 @@ window.app = Vue.createApp({
   data() {
     return {
       toggleAdvanced: false,
-      nfcTagReading: false,
+      disableNfcButton: true,
       lnurlLink: `${window.location.host}/boltcards/api/v1/scan/`,
       cards: [],
       hits: [],
@@ -150,59 +150,36 @@ window.app = Vue.createApp({
   },
   methods: {
     readNfcTag() {
-      try {
-        if (typeof NDEFReader == 'undefined') {
-          throw {
-            toString() {
-              return 'NFC not supported on this device or browser.'
-            }
-          }
-        }
-
-        const ndef = new NDEFReader()
-
-        const readerAbortController = new AbortController()
-        readerAbortController.signal.onabort = event => {
-          console.log('All NFC Read operations have been aborted.')
-        }
-
-        this.nfcTagReading = true
-        this.$q.notify({
-          message: 'Tap your NFC tag to copy its UID here.'
-        })
-
-        return ndef.scan({signal: readerAbortController.signal}).then(() => {
-          ndef.onreadingerror = () => {
-            this.nfcTagReading = false
-
-            this.$q.notify({
-              type: 'negative',
-              message: 'There was an error reading this NFC tag.'
-            })
-
-            readerAbortController.abort()
-          }
-
-          ndef.onreading = ({message, serialNumber}) => {
-            //Decode NDEF data from tag
-            this.cardDialog.data.uid = serialNumber
-              .toUpperCase()
-              .replaceAll(':', '')
-            this.$q.notify({
-              type: 'positive',
-              message: 'NFC tag read successfully.'
-            })
-          }
-        })
-      } catch (error) {
-        this.nfcTagReading = false
-        this.$q.notify({
-          type: 'negative',
-          message: error
-            ? error.toString()
-            : 'An unexpected error has occurred.'
-        })
+      const ndef = new NDEFReader()
+      const readerAbortController = new AbortController()
+      readerAbortController.signal.onabort = event => {
+        console.log('All NFC Read operations have been aborted.')
       }
+
+      Quasar.Notify.create({
+        message: 'Tap your NFC tag to copy its UID here.'
+      })
+
+      return ndef.scan({signal: readerAbortController.signal}).then(() => {
+        ndef.onreadingerror = () => {
+          this.disableNfcButton = false
+          Quasar.Notify.create({
+            type: 'negative',
+            message: 'There was an error reading this NFC tag.'
+          })
+          readerAbortController.abort()
+        }
+
+        ndef.onreading = ({message, serialNumber}) => {
+          const uid = serialNumber.toUpperCase().replaceAll(':', '')
+          //Decode NDEF data from tag
+          this.cardDialog.data.uid = uid
+          Quasar.Notify.create({
+            type: 'positive',
+            message: 'NFC tag read successfully.'
+          })
+        }
+      })
     },
     getCards() {
       LNbits.api
@@ -228,7 +205,7 @@ window.app = Vue.createApp({
           this.g.user.wallets[0].inkey
         )
         .then(response => {
-          this.hits = response.data.map(function (obj) {
+          this.hits = response.data.map(obj => {
             obj.card_name = this.cards.find(d => d.id == obj.card_id).card_name
             return mapCards(obj)
           })
@@ -242,7 +219,7 @@ window.app = Vue.createApp({
           this.g.user.wallets[0].inkey
         )
         .then(response => {
-          this.refunds = response.data.map(function (obj) {
+          this.refunds = response.data.map(obj => {
             return mapCards(obj)
           })
         })
@@ -322,9 +299,7 @@ window.app = Vue.createApp({
           this.cardDialog.show = false
           this.cardDialog.data = {}
         })
-        .catch(function (error) {
-          LNbits.utils.notifyApiError(error)
-        })
+        .catch(LNbits.utils.notifyApiError)
     },
     updateCardDialog(formId) {
       var card = _.findWhere(this.cards, {id: formId})
@@ -431,6 +406,25 @@ window.app = Vue.createApp({
     if (this.g.user.wallets.length) {
       this.getCards()
       this.getRefunds()
+    }
+    try {
+      if (typeof NDEFReader == 'undefined') {
+        throw {
+          toString() {
+            return 'NFC not supported on this device or browser.'
+          }
+        }
+      }
+      this.disableNfcButton = false
+      Quasar.Notify.create({
+        type: 'positive',
+        message: 'NFC is supported on this device. You can now read NFC tags.'
+      })
+    } catch (error) {
+      Quasar.Notify.create({
+        type: 'negative',
+        message: error ? error.toString() : 'An unexpected error has occurred.'
+      })
     }
   }
 })

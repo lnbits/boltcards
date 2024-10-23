@@ -172,7 +172,7 @@ async def get_hits_today(card_id: str) -> list[Hit]:
     )
     updatedrow = []
     for hit in rows:
-        if datetime.now().date() == datetime.fromtimestamp(hit.time).date():
+        if datetime.now().date() == hit.time.date():
             updatedrow.append(hit)
 
     return updatedrow

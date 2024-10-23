@@ -69,8 +69,8 @@ async def api_scan(p, c, request: Request, external_id: str):
 
     hits_amount = 0
     for hit in todays_hits:
-        hits_amount = hits_amount + hit.amount
-    if hits_amount > card.daily_limit:
+        hits_amount += hit.amount
+    if hits_amount > int(card.daily_limit):
         return {"status": "ERROR", "reason": "Max daily limit spent."}
     hit = await create_hit(card.id, ip, agent, card.counter, ctr_int)
 
@@ -88,7 +88,7 @@ async def api_scan(p, c, request: Request, external_id: str):
         "callback": str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id)),
         "k1": hit.id,
         "minWithdrawable": 1 * 1000,
-        "maxWithdrawable": card.tx_limit * 1000,
+        "maxWithdrawable": int(card.tx_limit) * 1000,
         "defaultDescription": f"Boltcard (refund address lnurl://{lnurlpay_bech32})",
         "payLink": lnurlpay_nonbech32_lud17,  # LUD-19 compatibility
     }
@@ -135,7 +135,7 @@ async def lnurl_callback(
         await pay_invoice(
             wallet_id=card.wallet,
             payment_request=pr,
-            max_sat=card.tx_limit,
+            max_sat=int(card.tx_limit),
             extra={"tag": "boltcards", "hit": hit.id},
         )
         return {"status": "OK"}
@@ -201,14 +201,13 @@ async def lnurlp_response(req: Request, hit_id: str):
         "callback": str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id)),
         "metadata": LnurlPayMetadata(json.dumps([["text/plain", "Refund"]])),
         "minSendable": 1 * 1000,
-        "maxSendable": card.tx_limit * 1000,
+        "maxSendable": int(card.tx_limit) * 1000,
     }
     return json.dumps(pay_response)
 
 
 @boltcards_lnurl_router.get(
     "/api/v1/lnurlp/cb/{hit_id}",
-    response_class=HTMLResponse,
     name="boltcards.lnurlp_callback",
 )
 async def lnurlp_callback(hit_id: str, amount: str = Query(None)):
@@ -219,7 +218,7 @@ async def lnurlp_callback(hit_id: str, amount: str = Query(None)):
     if not hit:
         return {"status": "ERROR", "reason": "LNURL-pay record not found."}
 
-    _, payment_request = await create_invoice(
+    payment = await create_invoice(
         wallet_id=card.wallet,
         amount=int(int(amount) / 1000),
         memo=f"Refund {hit_id}",
@@ -229,6 +228,4 @@ async def lnurlp_callback(hit_id: str, amount: str = Query(None)):
         extra={"refund": hit_id},
     )
 
-    pay_response = {"pr": payment_request, "routes": []}
-
-    return json.dumps(pay_response)
+    return {"pr": payment.bolt11, "routes": []}
