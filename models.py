@@ -1,5 +1,5 @@
 import json
-from sqlite3 import Row
+from datetime import datetime
 
 from fastapi import Query, Request
 from lnurl import Lnurl
@@ -17,8 +17,10 @@ class Card(BaseModel):
     uid: str
     external_id: str
     counter: int
-    tx_limit: int
-    daily_limit: int
+    # TODO: database column is TEXT should be INT
+    tx_limit: str
+    # TODO: database column is TEXT should be INT
+    daily_limit: str
     enable: bool
     k0: str
     k1: str
@@ -27,11 +29,7 @@ class Card(BaseModel):
     prev_k1: str
     prev_k2: str
     otp: str
-    time: int
-
-    @classmethod
-    def from_row(cls, row: Row) -> "Card":
-        return cls(**dict(row))
+    time: datetime
 
     def lnurl(self, req: Request) -> Lnurl:
         url = str(
@@ -67,19 +65,11 @@ class Hit(BaseModel):
     old_ctr: int
     new_ctr: int
     amount: int
-    time: int
-
-    @classmethod
-    def from_row(cls, row: Row) -> "Hit":
-        return cls(**dict(row))
+    time: datetime
 
 
 class Refund(BaseModel):
     id: str
     hit_id: str
     refund_amount: int
-    time: int
-
-    @classmethod
-    def from_row(cls, row: Row) -> "Refund":
-        return cls(**dict(row))
+    time: datetime

@@ -1,21 +1,15 @@
-Vue.component(VueQrcode.name, VueQrcode)
-
 const mapCards = obj => {
-  obj.date = Quasar.utils.date.formatDate(
-    new Date(obj.time * 1000),
-    'YYYY-MM-DD HH:mm'
-  )
-
+  obj.date = Quasar.date.formatDate(new Date(obj.time), 'YYYY-MM-DD HH:mm')
   return obj
 }
 
-new Vue({
+window.app = Vue.createApp({
   el: '#vue',
   mixins: [windowMixin],
-  data: function () {
+  data() {
     return {
       toggleAdvanced: false,
-      nfcTagReading: false,
+      disableNfcButton: true,
       lnurlLink: `${window.location.host}/boltcards/api/v1/scan/`,
       cards: [],
       hits: [],
@@ -155,107 +149,77 @@ new Vue({
     }
   },
   methods: {
-    readNfcTag: function () {
-      try {
-        const self = this
-
-        if (typeof NDEFReader == 'undefined') {
-          throw {
-            toString: function () {
-              return 'NFC not supported on this device or browser.'
-            }
-          }
-        }
-
-        const ndef = new NDEFReader()
-
-        const readerAbortController = new AbortController()
-        readerAbortController.signal.onabort = event => {
-          console.log('All NFC Read operations have been aborted.')
-        }
-
-        this.nfcTagReading = true
-        this.$q.notify({
-          message: 'Tap your NFC tag to copy its UID here.'
-        })
-
-        return ndef.scan({signal: readerAbortController.signal}).then(() => {
-          ndef.onreadingerror = () => {
-            self.nfcTagReading = false
-
-            this.$q.notify({
-              type: 'negative',
-              message: 'There was an error reading this NFC tag.'
-            })
-
-            readerAbortController.abort()
-          }
-
-          ndef.onreading = ({message, serialNumber}) => {
-            //Decode NDEF data from tag
-            var self = this
-            self.cardDialog.data.uid = serialNumber
-              .toUpperCase()
-              .replaceAll(':', '')
-            this.$q.notify({
-              type: 'positive',
-              message: 'NFC tag read successfully.'
-            })
-          }
-        })
-      } catch (error) {
-        this.nfcTagReading = false
-        this.$q.notify({
-          type: 'negative',
-          message: error
-            ? error.toString()
-            : 'An unexpected error has occurred.'
-        })
+    readNfcTag() {
+      const ndef = new NDEFReader()
+      const readerAbortController = new AbortController()
+      readerAbortController.signal.onabort = event => {
+        console.log('All NFC Read operations have been aborted.')
       }
-    },
-    getCards: function () {
-      var self = this
 
+      Quasar.Notify.create({
+        message: 'Tap your NFC tag to copy its UID here.'
+      })
+
+      return ndef.scan({signal: readerAbortController.signal}).then(() => {
+        ndef.onreadingerror = () => {
+          this.disableNfcButton = false
+          Quasar.Notify.create({
+            type: 'negative',
+            message: 'There was an error reading this NFC tag.'
+          })
+          readerAbortController.abort()
+        }
+
+        ndef.onreading = ({message, serialNumber}) => {
+          const uid = serialNumber.toUpperCase().replaceAll(':', '')
+          //Decode NDEF data from tag
+          this.cardDialog.data.uid = uid
+          Quasar.Notify.create({
+            type: 'positive',
+            message: 'NFC tag read successfully.'
+          })
+        }
+      })
+    },
+    getCards() {
       LNbits.api
         .request(
           'GET',
           '/boltcards/api/v1/cards?all_wallets=true',
           this.g.user.wallets[0].inkey
         )
-        .then(function (response) {
-          self.cards = response.data.map(function (obj) {
+        .then(response => {
+          this.cards = response.data.map(function (obj) {
             return mapCards(obj)
           })
         })
-        .then(function () {
-          self.getHits()
+        .then(() => {
+          this.getHits()
         })
     },
-    getHits: function () {
-      var self = this
+    getHits() {
       LNbits.api
         .request(
           'GET',
           '/boltcards/api/v1/hits?all_wallets=true',
           this.g.user.wallets[0].inkey
         )
-        .then(function (response) {
-          self.hits = response.data.map(function (obj) {
-            obj.card_name = self.cards.find(d => d.id == obj.card_id).card_name
+        .then(response => {
+          this.hits = response.data.map(obj => {
+            obj.card_name = this.cards.find(d => d.id == obj.card_id).card_name
             return mapCards(obj)
           })
         })
     },
-    getRefunds: function () {
-      var self = this
+    getRefunds() {
       LNbits.api
         .request(
           'GET',
           '/boltcards/api/v1/refunds?all_wallets=true',
           this.g.user.wallets[0].inkey
         )
-        .then(function (response) {
-          self.refunds = response.data.map(function (obj) {
+        .then(response => {
+          this.refunds = response.data.map(obj => {
             return mapCards(obj)
           })
         })
@@ -287,12 +251,11 @@ new Vue({
       this.qrCodeDialog.wipe = wipe
       this.qrCodeDialog.show = true
     },
-    addCardOpen: function () {
+    addCardOpen() {
       this.cardDialog.show = true
       this.generateKeys()
     },
-    generateKeys: function () {
-      var self = this
+    generateKeys() {
       const genRandomHexBytes = size =>
         crypto
           .getRandomValues(new Uint8Array(size))
@@ -302,22 +265,22 @@ new Vue({
         typeof this.cardDialog.data.card_name === 'string' &&
         this.cardDialog.data.card_name.search('debug') > -1
 
-      self.cardDialog.data.k0 = debugcard
+      this.cardDialog.data.k0 = debugcard
         ? '11111111111111111111111111111111'
         : genRandomHexBytes(16)
 
-      self.cardDialog.data.k1 = debugcard
+      this.cardDialog.data.k1 = debugcard
         ? '22222222222222222222222222222222'
         : genRandomHexBytes(16)
 
-      self.cardDialog.data.k2 = debugcard
+      this.cardDialog.data.k2 = debugcard
         ? '33333333333333333333333333333333'
         : genRandomHexBytes(16)
     },
-    closeFormDialog: function () {
+    closeFormDialog() {
       this.cardDialog.data = {}
     },
-    sendFormData: function () {
+    sendFormData() {
       let wallet = _.findWhere(this.g.user.wallets, {
         id: this.cardDialog.data.wallet
       })
@@ -328,21 +291,17 @@ new Vue({
         this.createCard(wallet, data)
       }
     },
-    createCard: function (wallet, data) {
-      var self = this
-
+    createCard(wallet, data) {
       LNbits.api
         .request('POST', '/boltcards/api/v1/cards', wallet.adminkey, data)
-        .then(function (response) {
-          self.cards.push(mapCards(response.data))
-          self.cardDialog.show = false
-          self.cardDialog.data = {}
+        .then(response => {
+          this.cards.push(mapCards(response.data))
+          this.cardDialog.show = false
+          this.cardDialog.data = {}
         })
-        .catch(function (error) {
-          LNbits.utils.notifyApiError(error)
-        })
+        .catch(LNbits.utils.notifyApiError)
     },
-    updateCardDialog: function (formId) {
+    updateCardDialog(formId) {
       var card = _.findWhere(this.cards, {id: formId})
       this.cardDialog.data = _.clone(card)
 
@@ -352,9 +311,7 @@ new Vue({
 
       this.cardDialog.show = true
     },
-    updateCard: function (wallet, data) {
-      var self = this
-
+    updateCard(wallet, data) {
       if (
         this.cardDialog.temp.k0 != data.k0 ||
         this.cardDialog.temp.k1 != data.k1 ||
@@ -372,21 +329,20 @@ new Vue({
           wallet.adminkey,
           data
         )
-        .then(function (response) {
-          self.cards = _.reject(self.cards, function (obj) {
+        .then(response => {
+          this.cards = _.reject(this.cards, function (obj) {
             return obj.id == data.id
           })
-          self.cards.push(mapCards(response.data))
-          self.cardDialog.show = false
-          self.cardDialog.data = {}
+          this.cards.push(mapCards(response.data))
+          this.cardDialog.show = false
+          this.cardDialog.data = {}
         })
         .catch(function (error) {
           LNbits.utils.notifyApiError(error)
         })
     },
-    enableCard: function (wallet, card_id, enable) {
-      var self = this
-      let fullWallet = _.findWhere(self.g.user.wallets, {
+    enableCard(wallet, card_id, enable) {
+      let fullWallet = _.findWhere(this.g.user.wallets, {
         id: wallet
       })
       LNbits.api
@@ -395,19 +351,18 @@ new Vue({
           '/boltcards/api/v1/cards/enable/' + card_id + '/' + enable,
           fullWallet.adminkey
         )
-        .then(function (response) {
+        .then(response => {
           console.log(response.data)
-          self.cards = _.reject(self.cards, function (obj) {
+          this.cards = _.reject(this.cards, function (obj) {
             return obj.id == response.data.id
           })
-          self.cards.push(mapCards(response.data))
+          this.cards.push(mapCards(response.data))
         })
         .catch(function (error) {
           LNbits.utils.notifyApiError(error)
         })
     },
-    deleteCard: function (cardId) {
-      let self = this
+    deleteCard(cardId) {
       let cards = _.findWhere(this.cards, {id: cardId})
 
       Quasar.utils.exportFile(
@@ -420,15 +375,15 @@ new Vue({
         .confirmDialog(
           "Are you sure you want to delete this card? Without access to the card keys you won't be able to reset them in the future!"
         )
-        .onOk(function () {
+        .onOk(() => {
           LNbits.api
             .request(
               'DELETE',
               '/boltcards/api/v1/cards/' + cardId,
-              _.findWhere(self.g.user.wallets, {id: cards.wallet}).adminkey
+              _.findWhere(this.g.user.wallets, {id: cards.wallet}).adminkey
             )
-            .then(function (response) {
-              self.cards = _.reject(self.cards, function (obj) {
+            .then(response => {
+              this.cards = _.reject(this.cards, function (obj) {
                 return obj.id == cardId
               })
             })
@@ -437,20 +392,39 @@ new Vue({
             })
         })
     },
-    exportCardsCSV: function () {
+    exportCardsCSV() {
       LNbits.utils.exportCSV(this.cardsTable.columns, this.cards)
     },
-    exportHitsCSV: function () {
+    exportHitsCSV() {
       LNbits.utils.exportCSV(this.hitsTable.columns, this.hits)
     },
-    exportRefundsCSV: function () {
+    exportRefundsCSV() {
       LNbits.utils.exportCSV(this.refundsTable.columns, this.refunds)
     }
   },
-  created: function () {
+  created() {
     if (this.g.user.wallets.length) {
       this.getCards()
       this.getRefunds()
+    }
+    try {
+      if (typeof NDEFReader == 'undefined') {
+        throw {
+          toString() {
+            return 'NFC not supported on this device or browser.'
+          }
+        }
+      }
+      this.disableNfcButton = false
+      Quasar.Notify.create({
+        type: 'positive',
+        message: 'NFC is supported on this device. You can now read NFC tags.'
+      })
+    } catch (error) {
+      Quasar.Notify.create({
+        type: 'negative',
+        message: error ? error.toString() : 'An unexpected error has occurred.'
+      })
     }
   }
 })

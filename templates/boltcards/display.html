@@ -74,20 +74,19 @@ card.card_name }{% endblock %} {% block page %}
 {% endblock %}{% block scripts %}
 <script>
   const mapHits = obj => {
-    obj.date = Quasar.utils.date.formatDate(
-      new Date(obj.time * 1000),
+    obj.date = Quasar.date.formatDate(
+      new Date(obj.time),
       'YYYY-MM-DD HH:mm'
     )
 
     return obj
   }
-  Vue.component(VueQrcode.name, VueQrcode)
 
-  new Vue({
+  window.app = Vue.createApp({
     el: '#vue',
     delimiters: ['${', '}'],
     mixins: [windowMixin],
-    data: function () {
+    data() {
       return {
         card: null,
         hits: null,
@@ -120,11 +119,11 @@ card.card_name }{% endblock %} {% block page %}
       }
     },
     created() {
-      this.card = JSON.parse('{{ card | tojson}}')
-      let hits = JSON.parse('{{ hits | tojson}}')
-      let refunds = JSON.parse('{{ refunds | tojson}}')
+      this.card = JSON.parse({{ card | tojson }})
+      const hits = {{ hits | tojson | safe }}
+      this.hits = hits.map(JSON.parse).map(mapHits)
+      const refunds = {{ refunds | tojson | safe }}
       this.refunds = refunds || []
-      this.hits = hits.map(mapHits)
     },
     computed: {
       enabled() {
@@ -133,8 +132,8 @@ card.card_name }{% endblock %} {% block page %}
     },
     methods: {
       copyText(text, message, position) {
-        Quasar.utils.copyToClipboard(text).then(() => {
-          this.$q.notify({
+        Quasar.copyToClipboard(text).then(() => {
+          Quasar.Notify.create({
             message: message || 'Copied to clipboard!',
             position: position || 'bottom'
           })
