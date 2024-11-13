@@ -5,6 +5,10 @@ card.card_name }{% endblock %} {% block page %}
     <q-card>
       <q-card-section>
         <div class="text-h6">Card Info</div>
+        <div class="text-subtitle2">
+          <b>Balance: </b>
+          <span v-text="balance"></span> sats
+        </div>
         <div class="text-subtitle2">This card is ${enabled}</div>
       </q-card-section>
 
@@ -89,6 +93,7 @@ card.card_name }{% endblock %} {% block page %}
     data() {
       return {
         card: null,
+        balance: 0,
         hits: null,
         cardInfo: [
           {
@@ -119,11 +124,13 @@ card.card_name }{% endblock %} {% block page %}
       }
     },
     created() {
-      this.card = JSON.parse({{ card | tojson }})
       const hits = {{ hits | tojson | safe }}
-      this.hits = hits.map(JSON.parse).map(mapHits)
       const refunds = {{ refunds | tojson | safe }}
+      const balance = {{ balance }}
+      this.card = JSON.parse({{ card | tojson }})
+      this.hits = hits.map(JSON.parse).map(mapHits)
       this.refunds = refunds || []
+      this.balance = LNbits.utils.formatSat(balance)
     },
     computed: {
       enabled() {
