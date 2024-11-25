@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from lnbits.core.crud import get_wallet
 from lnbits.core.models import User
 from lnbits.decorators import check_user_exists
 from lnbits.helpers import template_renderer
@@ -29,11 +30,21 @@ async def display(request: Request, card_id: str):
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Card does not exist."
         )
+    wallet = await get_wallet(card.wallet)
+    wallet_balance = 0
+    if wallet:
+        wallet_balance = wallet.balance
     hits = await get_hits([card.id])
     hits_json = [hit.json() for hit in hits]
     refunds = [refund.hit_id for refund in await get_refunds([hit.id for hit in hits])]
     card_json = card.json(exclude={"wallet"})
     return boltcards_renderer().TemplateResponse(
         "boltcards/display.html",
-        {"request": request, "card": card_json, "hits": hits_json, "refunds": refunds},
+        {
+            "request": request,
+            "card": card_json,
+            "hits": hits_json,
+            "refunds": refunds,
+            "balance": int(wallet_balance),
+        },
     )
