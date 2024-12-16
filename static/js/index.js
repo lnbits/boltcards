@@ -365,7 +365,7 @@ window.app = Vue.createApp({
     deleteCard(cardId) {
       let cards = _.findWhere(this.cards, {id: cardId})
 
-      Quasar.utils.exportFile(
+      Quasar.exportFile(
         cards.card_name + '.json',
         this.qrCodeDialog.data_wipe,
         'application/json'
