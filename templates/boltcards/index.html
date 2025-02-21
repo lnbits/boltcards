@@ -254,7 +254,7 @@
               emit-value
               v-model="cardDialog.data.tx_limit"
               type="number"
-              label="Max transaction (sats)"
+              label="Max transaction ({{LNBITS_DENOMINATION}})"
               class="q-pr-sm"
             ></q-input>
           </div>
@@ -265,7 +265,7 @@
               emit-value
               v-model="cardDialog.data.daily_limit"
               type="number"
-              label="Daily limit (sats)"
+              label="Daily limit ({{LNBITS_DENOMINATION}})"
             ></q-input>
           </div>
         </div>
