@@ -87,8 +87,44 @@ async def m002_correct_typing(db):
 
     await db.execute(
         """
-        INSERT INTO boltcards.cards
-        SELECT * FROM boltcards.cards_m001;
+        INSERT INTO boltcards.cards (
+            id,
+            wallet,
+            card_name,
+            uid,
+            external_id,
+            counter,
+            tx_limit,
+            daily_limit,
+            enable,
+            k0,
+            k1,
+            k2,
+            prev_k0,
+            prev_k1,
+            prev_k2,
+            otp,
+            time
+        )
+        SELECT
+            id,
+            wallet,
+            card_name,
+            uid,
+            external_id,
+            counter,
+            CAST(tx_limit AS INT),
+            CAST(daily_limit AS INT),
+            enable,
+            k0,
+            k1,
+            k2,
+            prev_k0,
+            prev_k1,
+            prev_k2,
+            otp,
+            time
+        FROM boltcards.cards_m001;
     """
     )
     await db.execute("DROP TABLE boltcards.cards_m001;")
