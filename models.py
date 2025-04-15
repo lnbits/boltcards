@@ -17,10 +17,8 @@ class Card(BaseModel):
     uid: str
     external_id: str
     counter: int
-    # TODO: database column is TEXT should be INT
-    tx_limit: str
-    # TODO: database column is TEXT should be INT
-    daily_limit: str
+    tx_limit: int
+    daily_limit: int
     enable: bool
     k0: str
     k1: str

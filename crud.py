@@ -57,11 +57,7 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
     return card
 
 
-async def update_card(card_id: str, data: CreateCardData) -> Card:
-    card = Card(
-        id=card_id,
-        **data.dict(),
-    )
+async def update_card(card: Card) -> Card:
     await db.update("boltcards.cards", card)
     return card
 

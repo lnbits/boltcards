@@ -71,7 +71,6 @@ async def api_card_update(
     card_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Card:
-
     card = await get_card(card_id)
     if not card:
         raise HTTPException(
@@ -85,8 +84,9 @@ async def api_card_update(
             detail="UID already registered. Delete registered card and try again.",
             status_code=HTTPStatus.BAD_REQUEST,
         )
-    card = await update_card(card_id, **data.dict())
-    assert card, "update_card should always return a card"
+    for key, value in data.dict().items():
+        setattr(card, key, value)
+    await update_card(card)
     return card
 
 
