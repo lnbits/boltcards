@@ -114,8 +114,8 @@ async def api_card_create(
     "/api/v1/cards/enable/{card_id}/{enable}", status_code=HTTPStatus.OK
 )
 async def enable_card(
-    card_id,
-    enable,
+    card_id: str,
+    enable: bool,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
     card = await get_card(card_id)
