@@ -5,7 +5,7 @@ from fastapi import Query, Request
 from lnurl import Lnurl
 from lnurl import encode as lnurl_encode
 from lnurl.types import LnurlPayMetadata
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 ZERO_KEY = "00000000000000000000000000000000"
 
@@ -71,3 +71,8 @@ class Refund(BaseModel):
     hit_id: str
     refund_amount: int
     time: datetime
+
+
+class UIDPost(BaseModel):
+    UID: str = Field(None, description="The UID of the card.")
+    LNURLW: str = Field(None, description="The LNURLW of the card.")

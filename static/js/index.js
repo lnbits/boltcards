@@ -229,6 +229,9 @@ window.app = Vue.createApp({
       this.qrCodeDialog.data = {
         id: card.id,
         link: window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp,
+        encodedURI: encodeURIComponent(
+          window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp
+        ),
         name: card.card_name,
         uid: card.uid,
         external_id: card.external_id,
