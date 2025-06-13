@@ -479,7 +479,7 @@
         unelevated
         outline
         color="grey"
-        :href="`boltcard://${qrCodeDialog.wipe ? 'reset' : 'program'}?url=${encodeURIComponent(qrCodeDialog.data.link + (qrCodeDialog.wipe ? '&wipe=true' : ''))}`"
+        :href="deeplinkUrl"
         target="_blank"
         label="Use Boltcard App"
       >

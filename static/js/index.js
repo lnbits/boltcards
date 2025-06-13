@@ -148,6 +148,15 @@ window.app = Vue.createApp({
       }
     }
   },
+  computed: {
+    deeplinkUrl() {
+      const baseUrl = `boltcard://${this.qrCodeDialog.wipe ? 'reset' : 'program'}`
+      const url =
+        this.qrCodeDialog.data.link +
+        (this.qrCodeDialog.wipe ? '&wipe=true' : '')
+      return `${baseUrl}?url=${encodeURIComponent(url)}`
+    }
+  },
   methods: {
     readNfcTag() {
       const ndef = new NDEFReader()
