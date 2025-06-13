@@ -16,12 +16,14 @@ from .crud import (
     get_card,
     get_card_by_external_id,
     get_card_by_otp,
+    get_card_by_uid,
     get_hit,
     get_hits_today,
     spend_hit,
     update_card_counter,
     update_card_otp,
 )
+from .models import UIDPost
 from .nxp424 import decrypt_sun, get_sun_mac
 
 boltcards_lnurl_router = APIRouter()
@@ -176,6 +178,46 @@ async def api_auth(a, request: Request):
         "protocol_version": str(1),
     }
 
+    return response
+
+
+# /boltcards/api/v1/auth?a=00000000000000000000000000000000
+@boltcards_lnurl_router.post("/api/v1/auth")
+async def api_auth_post(a: str, request: Request, data: UIDPost, wipe: bool = False):
+    card = None
+    if wipe:
+        card = await get_card_by_otp(a)
+    else:
+        if not data.UID:
+            raise HTTPException(
+                detail="Missing UID.", status_code=HTTPStatus.BAD_REQUEST
+            )
+
+        card = await get_card_by_uid(data.UID)
+    if not card:
+        raise HTTPException(
+            detail="Card does not exist.", status_code=HTTPStatus.NOT_FOUND
+        )
+    new_otp = secrets.token_hex(16)
+    await update_card_otp(new_otp, card.id)
+    lnurlw_base = (
+        f"{urlparse(str(request.url)).netloc}/boltcards/api/v1/scan/{card.external_id}"
+    )
+    response = {
+        "CARD_NAME": card.card_name,
+        "ID": str(1),
+        "K0": card.k0,
+        "K1": card.k1,
+        "K2": card.k2,
+        "K3": card.k1,
+        "K4": card.k2,
+        "LNURLW_BASE": "LNURLW://" + lnurlw_base,
+        "LNURLW": "LNURLW://" + lnurlw_base,
+        "PROTOCOL_NAME": "NEW_BOLT_CARD_RESPONSE",
+        "PROTOCOL_VERSION": str(1),
+    }
+    if wipe:
+        response["action"] = "wipe"
     return response
 
 

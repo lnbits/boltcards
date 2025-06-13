@@ -463,6 +463,7 @@
         <q-tooltip>Click to copy, then paste to NFC Card Creator</q-tooltip>
       </q-btn>
       <q-btn
+        class="q-ml-sm"
         unelevated
         outline
         color="red"
@@ -472,6 +473,17 @@
         v-close-popup
       >
         <q-tooltip>Backup the keys, or wipe the card first!</q-tooltip>
+      </q-btn>
+      <q-btn
+        class="q-ml-sm"
+        unelevated
+        outline
+        color="grey"
+        :href="deeplinkUrl"
+        target="_blank"
+        label="Use Boltcard App"
+      >
+        <q-tooltip>Use Boltcard Programmer App</q-tooltip>
       </q-btn>
       <div class="row q-mt-lg q-gutter-sm">
         <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
