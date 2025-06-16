@@ -148,6 +148,15 @@ window.app = Vue.createApp({
       }
     }
   },
+  computed: {
+    deeplinkUrl() {
+      const baseUrl = `boltcard://${this.qrCodeDialog.wipe ? 'reset' : 'program'}`
+      const url =
+        this.qrCodeDialog.data.link +
+        (this.qrCodeDialog.wipe ? '&wipe=true' : '')
+      return `${baseUrl}?url=${encodeURIComponent(url)}`
+    }
+  },
   methods: {
     readNfcTag() {
       const ndef = new NDEFReader()
@@ -229,6 +238,9 @@ window.app = Vue.createApp({
       this.qrCodeDialog.data = {
         id: card.id,
         link: window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp,
+        encodedURI: encodeURIComponent(
+          window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp
+        ),
         name: card.card_name,
         uid: card.uid,
         external_id: card.external_id,
