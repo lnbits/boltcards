@@ -24,6 +24,10 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
             counter,
             tx_limit,
             daily_limit,
+            pin_limit,
+            pin_try,
+            pin,
+            pin_enable,
             enable,
             k0,
             k1,
@@ -32,7 +36,8 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
         )
         VALUES (
             :id, :uid, :external_id, :wallet, :card_name, :counter,
-            :tx_limit, :daily_limit, :enable, :k0, :k1, :k2, :otp
+            :tx_limit, :daily_limit, :pin_limit, :pin_try, :pin, :pin_enable,
+            :enable, :k0, :k1, :k2, :otp
         )
         """,
         {
@@ -44,6 +49,10 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
             "counter": data.counter,
             "tx_limit": data.tx_limit,
             "daily_limit": data.daily_limit,
+            "pin_limit": data.pin_limit,
+            "pin_try": 0,
+            "pin": data.pin,
+            "pin_enable": False,
             "enable": True,
             "k0": data.k0,
             "k1": data.k1,
@@ -130,6 +139,8 @@ async def enable_disable_card(enable: bool, card_id: str) -> Card | None:
         "UPDATE boltcards.cards SET enable = :enable WHERE id = :id",
         {"enable": enable, "id": card_id},
     )
+    if enable:
+        update_card_pin_try(0, card_id)
     return await get_card(card_id)
 
 
@@ -137,6 +148,13 @@ async def update_card_otp(otp: str, card_id: str):
     await db.execute(
         "UPDATE boltcards.cards SET otp = :otp WHERE id = :id",
         {"otp": otp, "id": card_id},
+    )
+
+
+async def update_card_pin_try(pin_try: int, card_id: str):
+    await db.execute(
+        "UPDATE boltcards.cards SET pin_try = :pin_try WHERE id = :id",
+        {"pin_try": pin_try, "id": card_id},
     )
 
 

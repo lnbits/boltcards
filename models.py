@@ -19,6 +19,10 @@ class Card(BaseModel):
     counter: int
     tx_limit: int
     daily_limit: int
+    pin_limit: int
+    pin_try: int
+    pin: str
+    pin_enable: bool
     enable: bool
     k0: str
     k1: str
@@ -45,6 +49,10 @@ class CreateCardData(BaseModel):
     counter: int = Query(0)
     tx_limit: int = Query(0)
     daily_limit: int = Query(0)
+    pin_limit: int = Query(0)
+    pin_try: int = Query(0)
+    pin: str = Query('')
+    pin_enable: str = Query(False)
     enable: bool = Query(True)
     k0: str = Query(ZERO_KEY)
     k1: str = Query(ZERO_KEY)
