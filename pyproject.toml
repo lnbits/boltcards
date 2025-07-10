@@ -3,6 +3,7 @@ name = "lnbits-boltcards"
 version = "0.0.0"
 description = "LNbits, free and open-source Lightning wallet and accounts system."
 authors = ["Alan Bits <alan@lnbits.com>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10 | ^3.9"
