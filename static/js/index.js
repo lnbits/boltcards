@@ -434,7 +434,9 @@ window.app = Vue.createApp({
         message: 'NFC is supported on this device. You can now read NFC tags.'
       })
     } catch (error) {
-      console.error(error ? error.toString() : 'An unexpected error has occurred.')
+      console.error(
+        error ? error.toString() : 'An unexpected error has occurred.'
+      )
     }
   }
 })
