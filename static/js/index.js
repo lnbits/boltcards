@@ -216,7 +216,7 @@ window.app = Vue.createApp({
         .then(response => {
           this.hits = response.data.map(obj => {
             obj.card_name = this.cards.find(d => d.id == obj.card_id).card_name
-            obj.amount = obj.spent ? obj.amount : "(" + obj.amount + ")"
+            obj.amount = obj.spent ? obj.amount : '(' + obj.amount + ')'
             return mapCards(obj)
           })
         })

@@ -160,7 +160,6 @@ async def get_hits(cards_ids: list[str]) -> list[Hit]:
     )
 
 
-
 async def get_spent_hits_today(card_id: str) -> List[Hit]:
     rows = await db.fetchall(
         "SELECT * FROM boltcards.hits WHERE card_id = ? AND spent = ?",

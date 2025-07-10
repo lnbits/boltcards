@@ -157,7 +157,7 @@ async def lnurl_callback(
             )
             return {"status": "OK"}
         except Exception as exc:
-            await unspend_hit(id=hit.id) # consider it unspent
+            await unspend_hit(id=hit.id)  # consider it unspent
             return {"status": "ERROR", "reason": f"Payment failed - {exc}"}
     else:
         return {"status": "ERROR", "reason": "Amount exceeds card limit"}
