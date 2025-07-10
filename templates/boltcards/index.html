@@ -287,6 +287,7 @@
               v-model="cardDialog.data.uid"
               type="text"
               label="Card UID "
+              :hint="disableNfcButton ? 'NFC reader is not available on this device. Input UID manually.' : ''"
             >
             </q-input>
           </div>
