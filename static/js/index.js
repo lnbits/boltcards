@@ -216,6 +216,7 @@ window.app = Vue.createApp({
         .then(response => {
           this.hits = response.data.map(obj => {
             obj.card_name = this.cards.find(d => d.id == obj.card_id).card_name
+            obj.amount = obj.spent ? obj.amount : '(' + obj.amount + ')'
             return mapCards(obj)
           })
         })
@@ -433,10 +434,9 @@ window.app = Vue.createApp({
         message: 'NFC is supported on this device. You can now read NFC tags.'
       })
     } catch (error) {
-      Quasar.Notify.create({
-        type: 'negative',
-        message: error ? error.toString() : 'An unexpected error has occurred.'
-      })
+      console.error(
+        error ? error.toString() : 'An unexpected error has occurred.'
+      )
     }
   }
 })

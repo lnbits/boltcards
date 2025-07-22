@@ -279,7 +279,7 @@
         >
         </q-input>
         <div class="row">
-          <div class="col-10">
+          <div :class="disableNfcButton ? 'col-12' : 'col-10'">
             <q-input
               filled
               dense
@@ -287,10 +287,11 @@
               v-model="cardDialog.data.uid"
               type="text"
               label="Card UID "
+              :hint="disableNfcButton ? 'NFC reader is not available on this device. Input UID manually.' : ''"
             >
             </q-input>
           </div>
-          <div class="col-2 q-pl-sm">
+          <div v-if="!disableNfcButton" class="col-2 q-pl-sm">
             <q-btn
               outline
               color="grey"

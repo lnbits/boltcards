@@ -160,10 +160,10 @@ async def get_hits(cards_ids: list[str]) -> list[Hit]:
     )
 
 
-async def get_hits_today(card_id: str) -> list[Hit]:
+async def get_spent_hits_today(card_id: str) -> list[Hit]:
     rows = await db.fetchall(
-        "SELECT * FROM boltcards.hits WHERE card_id = :id",
-        {"id": card_id},
+        "SELECT * FROM boltcards.hits WHERE card_id = ? AND spent = ?",
+        {"card_id": card_id, "spent": True},
         Hit,
     )
     updatedrow = []
@@ -180,6 +180,14 @@ async def spend_hit(card_id: str, amount: int):
         {"spent": True, "amount": amount, "id": card_id},
     )
     return await get_hit(card_id)
+
+
+async def unspend_hit(hit_id: str):
+    await db.execute(
+        "UPDATE boltcards.hits SET spent = ? WHERE id = ?",
+        {"spent": False, "id": hit_id},
+    )
+    return await get_hit(hit_id)
 
 
 async def create_hit(card_id, ip, useragent, old_ctr, new_ctr) -> Hit:
