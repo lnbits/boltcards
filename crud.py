@@ -1,6 +1,5 @@
 import secrets
 from datetime import datetime
-from typing import Optional
 
 from lnbits.db import Database
 from lnbits.helpers import urlsafe_short_hash
@@ -72,7 +71,7 @@ async def get_cards(wallet_ids: list[str]) -> list[Card]:
     )
 
 
-async def get_card(card_id: str) -> Optional[Card]:
+async def get_card(card_id: str) -> Card | None:
     return await db.fetchone(
         "SELECT * FROM boltcards.cards WHERE id = :id",
         {"id": card_id},
@@ -80,7 +79,7 @@ async def get_card(card_id: str) -> Optional[Card]:
     )
 
 
-async def get_card_by_uid(card_uid: str) -> Optional[Card]:
+async def get_card_by_uid(card_uid: str) -> Card | None:
     return await db.fetchone(
         "SELECT * FROM boltcards.cards WHERE uid = :uid",
         {"uid": card_uid.upper()},
@@ -88,7 +87,7 @@ async def get_card_by_uid(card_uid: str) -> Optional[Card]:
     )
 
 
-async def get_card_by_external_id(external_id: str) -> Optional[Card]:
+async def get_card_by_external_id(external_id: str) -> Card | None:
     return await db.fetchone(
         "SELECT * FROM boltcards.cards WHERE external_id = :ext_id",
         {"ext_id": external_id.lower()},
@@ -96,7 +95,7 @@ async def get_card_by_external_id(external_id: str) -> Optional[Card]:
     )
 
 
-async def get_card_by_otp(otp: str) -> Optional[Card]:
+async def get_card_by_otp(otp: str) -> Card | None:
     return await db.fetchone(
         "SELECT * FROM boltcards.cards WHERE otp = :otp",
         {"otp": otp},
@@ -126,7 +125,7 @@ async def update_card_counter(counter: int, card_id: str):
     )
 
 
-async def enable_disable_card(enable: bool, card_id: str) -> Optional[Card]:
+async def enable_disable_card(enable: bool, card_id: str) -> Card | None:
     await db.execute(
         "UPDATE boltcards.cards SET enable = :enable WHERE id = :id",
         {"enable": enable, "id": card_id},
@@ -141,7 +140,7 @@ async def update_card_otp(otp: str, card_id: str):
     )
 
 
-async def get_hit(hit_id: str) -> Optional[Hit]:
+async def get_hit(hit_id: str) -> Hit | None:
     return await db.fetchone(
         "SELECT * FROM boltcards.hits WHERE id = :id",
         {"id": hit_id},
@@ -236,7 +235,7 @@ async def create_refund(hit_id, refund_amount) -> Refund:
     return refund
 
 
-async def get_refund(refund_id: str) -> Optional[Refund]:
+async def get_refund(refund_id: str) -> Refund | None:
     return await db.fetchone(
         "SELECT * FROM boltcards.refunds WHERE id = :id",
         {"id": refund_id},
