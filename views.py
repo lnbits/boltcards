@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -26,7 +25,7 @@ async def index(request: Request, user: User = Depends(check_user_exists)):
 
 @boltcards_generic_router.get("/{card_id}", response_class=HTMLResponse)
 async def display(
-    request: Request, card_id: str, user_id: Optional[str] = Depends(optional_user_id)
+    request: Request, card_id: str, user_id: str | None = Depends(optional_user_id)
 ):
     if not user_id:
         raise HTTPException(
