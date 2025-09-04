@@ -40,9 +40,9 @@ def boltcards_start():
 
 
 __all__ = [
-    "db",
     "boltcards_ext",
-    "boltcards_static_files",
     "boltcards_start",
+    "boltcards_static_files",
     "boltcards_stop",
+    "db",
 ]
