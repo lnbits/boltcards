@@ -106,7 +106,11 @@ async def api_card_create(
             status_code=HTTPStatus.BAD_REQUEST,
         )
     card = await create_card(wallet_id=wallet.wallet.id, data=data)
-    assert card, "create_card should always return a card"
+    if not card:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Could not create card.",
+        )
     return card
 
 
@@ -117,19 +121,25 @@ async def enable_card(
     card_id: str,
     enable: bool,
     wallet: WalletTypeInfo = Depends(require_admin_key),
-):
+) -> Card:
     card = await get_card(card_id)
     if not card:
         raise HTTPException(detail="No card found.", status_code=HTTPStatus.NOT_FOUND)
     if card.wallet != wallet.wallet.id:
         raise HTTPException(detail="Not your card.", status_code=HTTPStatus.FORBIDDEN)
     card = await enable_disable_card(enable=enable, card_id=card_id)
-    assert card
-    return card.dict()
+    if not card:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Could not update card.",
+        )
+    return card
 
 
 @boltcards_api_router.delete("/api/v1/cards/{card_id}")
-async def api_card_delete(card_id, wallet: WalletTypeInfo = Depends(require_admin_key)):
+async def api_card_delete(
+    card_id, wallet: WalletTypeInfo = Depends(require_admin_key)
+) -> None:
     card = await get_card(card_id)
 
     if not card:
@@ -141,7 +151,6 @@ async def api_card_delete(card_id, wallet: WalletTypeInfo = Depends(require_admi
         raise HTTPException(detail="Not your card.", status_code=HTTPStatus.FORBIDDEN)
 
     await delete_card(card_id)
-    return "", HTTPStatus.NO_CONTENT
 
 
 @boltcards_api_router.get("/api/v1/hits")
