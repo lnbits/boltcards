@@ -381,7 +381,6 @@
       <div class="col q-mt-lg text-center">
         <lnbits-qrcode
           :value="qrCodeDialog.data.link"
-          class="rounded-borders"
           v-show="!qrCodeDialog.wipe"
         ></lnbits-qrcode>
         <p class="text-center" v-show="!qrCodeDialog.wipe">
@@ -396,7 +395,6 @@
         </p>
         <lnbits-qrcode
           :value="qrCodeDialog.data_wipe"
-          class="rounded-borders"
           v-show="qrCodeDialog.wipe"
         ></lnbits-qrcode>
         <p class="text-center" v-show="qrCodeDialog.wipe">
