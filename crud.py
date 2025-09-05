@@ -140,7 +140,7 @@ async def enable_disable_card(enable: bool, card_id: str) -> Card | None:
         {"enable": enable, "id": card_id},
     )
     if enable:
-        update_card_pin_try(0, card_id)
+        await update_card_pin_try(0, card_id)
     return await get_card(card_id)
 
 
