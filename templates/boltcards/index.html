@@ -302,6 +302,40 @@
             </q-btn>
           </div>
         </div>
+
+        <q-toggle
+          v-model="cardDialog.data.pin_enable"
+          label="Enable pin"
+        ></q-toggle>
+        <div v-show="cardDialog.data.pin_enable" class="q-gutter-y-md">
+          <div class="row">
+            <div class="col">
+              <q-input
+                filled
+                dense
+                emit-value
+                v-model="cardDialog.data.pin_limit"
+                type="number"
+                label="Min transaction ({{LNBITS_DENOMINATION}})"
+                class="q-pr-sm"
+              ></q-input>
+            </div>
+            <div class="col">
+              <q-input
+                filled
+                dense
+                emit-value
+                v-model="cardDialog.data.pin"
+                type="password"
+                inputmode="numeric"
+                mask="####"
+                label="Pin"
+              ></q-input>
+            </div>
+          </div>
+        </div>
+
+
         <q-toggle
           v-model="toggleAdvanced"
           label="Show advanced options"
