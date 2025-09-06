@@ -136,7 +136,7 @@ async def lnurl_callback(
     assert card
     assert invoice.amount_msat, "Invoice amount is missing"
 
-    if card.pin_enable and int(card.pin_limit) <= int(invoice.amount_msat) :
+    if card.pin_enable and int(card.pin_limit) * 1000 <= int(invoice.amount_msat) :
         if card.pin != pin:
             tries_left = 2 - card.pin_try
             if tries_left == 0:
