@@ -56,12 +56,16 @@ card.card_name }{% endblock %} {% block page %}
                 :color="hit.spent > 0 ? 'green' : 'grey'"
               />
             </q-item-section>
-            <q-item-section>
+            <q-item-section class="overflow-hidden">
               <q-item-label
                 >ID: ${hit.id} ${refunds.some(r => r.hit_id == hit.id) ?
-                '(Refunded)' : null}</q-item-label
-              >
-              <q-item-label caption lines="1">IP: ${hit.ip}</q-item-label>
+                '(Refunded)' : null}
+                <q-tooltip><span v-text="hit.id"></span></q-tooltip>
+              </q-item-label>
+              <q-item-label caption lines="1"
+                >IP: ${hit.ip}<q-tooltip
+                  ><span v-text="hit.ip"></span></q-tooltip
+              ></q-item-label>
             </q-item-section>
 
             <q-item-section side top>
