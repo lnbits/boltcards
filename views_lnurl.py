@@ -10,7 +10,6 @@ from lnbits.core.services import create_invoice, pay_invoice
 from lnurl import (
     CallbackUrl,
     LightningInvoice,
-    Lnurl,
     LnurlErrorResponse,
     LnurlPayActionResponse,
     LnurlPayMetadata,
@@ -93,9 +92,7 @@ async def api_scan(
 
     # create a lud17 lnurlp to support lud19, add payLink field of the withdrawRequest
     lnurlpay_url = str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id))
-    pay_link = Lnurl(
-        lnurlpay_url.replace("http://", "lnurlp://").replace("https://", "lnurlp://")
-    )
+    pay_link = lnurlpay_url.replace("http://", "lnurlp://").replace("https://", "lnurlp://")
     callback_url = parse_obj_as(
         CallbackUrl, str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id))
     )
@@ -104,8 +101,8 @@ async def api_scan(
         k1=hit.id,
         minWithdrawable=MilliSatoshi(1000),
         maxWithdrawable=MilliSatoshi(int(card.tx_limit) * 1000),
-        defaultDescription=f"Boltcard (refund address lnurl://{pay_link.bech32})",
-        payLink=pay_link,  # LUD-19 compatibility
+        defaultDescription=f"Boltcard (refund address {pay_link})",
+        payLink=pay_link,  # type: ignore LUD-19 compatibility
     )
 
 
