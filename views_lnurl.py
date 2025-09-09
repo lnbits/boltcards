@@ -20,6 +20,7 @@ from lnurl import (
     MessageAction,
     MilliSatoshi,
 )
+from loguru import logger
 from pydantic import parse_obj_as
 
 from .crud import (
@@ -230,36 +231,6 @@ async def api_auth_post(a: str, request: Request, data: UIDPost, wipe: bool = Fa
 
 
 ###############LNURLPAY REFUNDS#################
-
-
-@boltcards_lnurl_router.get(
-    "/api/v1/lnurlp/{hit_id}",
-    response_class=HTMLResponse,
-    name="boltcards.lnurlp_response",
-)
-async def lnurlp_response(
-    req: Request, hit_id: str
-) -> LnurlPayResponse | LnurlErrorResponse:
-    hit = await get_hit(hit_id)
-    if not hit:
-        return LnurlErrorResponse(reason="LNURL-pay hit not found.")
-    card = await get_card(hit.card_id)
-    if not card:
-        return LnurlErrorResponse(reason="Card not found.")
-    if not card.enable:
-        return LnurlErrorResponse(reason="Card is disabled.")
-
-    callback_url = parse_obj_as(
-        CallbackUrl, str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id))
-    )
-    return LnurlPayResponse(
-        callback=callback_url,
-        minSendable=MilliSatoshi(1000),
-        maxSendable=MilliSatoshi(int(card.tx_limit) * 1000),
-        metadata=LnurlPayMetadata(json.dumps([["text/plain", "Refund"]])),
-    )
-
-
 @boltcards_lnurl_router.get(
     "/api/v1/lnurlp/cb/{hit_id}",
     name="boltcards.lnurlp_callback",
@@ -286,11 +257,34 @@ async def lnurlp_callback(
         wallet_id=card.wallet,
         amount=int(int(amount) / 1000),
         memo=f"Refund {hit_id}",
-        unhashed_description=LnurlPayMetadata(
-            json.dumps([["text/plain", "Refund"]])
-        ).encode(),
         extra={"refund": hit_id},
     )
     action = MessageAction(message=Max144Str("Refunded!"))
     invoice = parse_obj_as(LightningInvoice, payment.bolt11)
     return LnurlPayActionResponse(pr=invoice, successAction=action)
+
+
+@boltcards_lnurl_router.get(
+    "/api/v1/lnurlp/{hit_id}",
+    name="boltcards.lnurlp_response",
+)
+async def lnurlp_response(
+    req: Request, hit_id: str
+) -> LnurlPayResponse | LnurlErrorResponse:
+    hit = await get_hit(hit_id)
+    if not hit:
+        return LnurlErrorResponse(reason="LNURL-pay hit not found.")
+    card = await get_card(hit.card_id)
+    if not card:
+        return LnurlErrorResponse(reason="Card not found.")
+    if not card.enable:
+        return LnurlErrorResponse(reason="Card is disabled.")
+    callback_url = parse_obj_as(
+        CallbackUrl, str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id))
+    )
+    return LnurlPayResponse(
+        callback=callback_url,
+        minSendable=MilliSatoshi(1000),
+        maxSendable=MilliSatoshi(int(card.tx_limit) * 1000),
+        metadata=LnurlPayMetadata(json.dumps([["text/plain", "Refund"]])),
+    )
