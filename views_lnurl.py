@@ -257,6 +257,9 @@ async def lnurlp_callback(
         wallet_id=card.wallet,
         amount=int(int(amount) / 1000),
         memo=f"Refund {hit_id}",
+        unhashed_description=LnurlPayMetadata(
+            json.dumps([["text/plain", "Refund"]])
+        ).encode(),
         extra={"refund": hit_id},
     )
     action = MessageAction(message=Max144Str("Refunded!"))
