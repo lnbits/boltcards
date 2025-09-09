@@ -6,10 +6,20 @@ from urllib.parse import urlparse
 import bolt11
 from fastapi import APIRouter, HTTPException, Query, Request
 from lnbits.core.services import create_invoice, pay_invoice
-from lnurl import encode as lnurl_encode
-from lnurl.types import LnurlPayMetadata
-from loguru import logger
-from starlette.responses import HTMLResponse
+from lnurl import (
+    CallbackUrl,
+    LightningInvoice,
+    LnurlErrorResponse,
+    LnurlPayActionResponse,
+    LnurlPayMetadata,
+    LnurlPayResponse,
+    LnurlSuccessResponse,
+    LnurlWithdrawResponse,
+    Max144Str,
+    MessageAction,
+    MilliSatoshi,
+)
+from pydantic import parse_obj_as
 
 from .crud import (
     create_hit,
@@ -31,7 +41,9 @@ boltcards_lnurl_router = APIRouter()
 
 # /boltcards/api/v1/scan?p=00000000000000000000000000000000&c=0000000000000000
 @boltcards_lnurl_router.get("/api/v1/scan/{external_id}")
-async def api_scan(p, c, request: Request, external_id: str):
+async def api_scan(
+    p, c, request: Request, external_id: str
+) -> LnurlWithdrawResponse | LnurlErrorResponse:
     # some wallets send everything as lower case, no bueno
     p = p.upper()
     c = c.upper()
@@ -39,27 +51,28 @@ async def api_scan(p, c, request: Request, external_id: str):
     counter = b""
     card = await get_card_by_external_id(external_id)
     if not card:
-        return {"status": "ERROR", "reason": "No card."}
+        return LnurlErrorResponse(reason="Card not found.")
     if not card.enable:
-        return {"status": "ERROR", "reason": "Card is disabled."}
+        return LnurlErrorResponse(reason="Card is disabled.")
     try:
         card_uid, counter = decrypt_sun(bytes.fromhex(p), bytes.fromhex(card.k1))
         if card.uid.upper() != card_uid.hex().upper():
-            return {"status": "ERROR", "reason": "Card UID mis-match."}
+            return LnurlErrorResponse(reason="Card UID mis-match.")
         if c != get_sun_mac(card_uid, counter, bytes.fromhex(card.k2)).hex().upper():
-            return {"status": "ERROR", "reason": "CMAC does not check."}
+            return LnurlErrorResponse(reason="CMAC does not check.")
     except Exception:
-        return {"status": "ERROR", "reason": "Error decrypting card."}
+        return LnurlErrorResponse(reason="Error decrypting card.")
 
     ctr_int = int.from_bytes(counter, "little")
 
     if ctr_int <= card.counter:
-        return {"status": "ERROR", "reason": "This link is already used."}
+        return LnurlErrorResponse(reason="This link is already used.")
 
     await update_card_counter(ctr_int, card.id)
 
     # gathering some info for hit record
-    assert request.client
+    if not request.client:
+        return LnurlErrorResponse(reason="Cannot get client info.")
     ip = request.client.host
     if "x-real-ip" in request.headers:
         ip = request.headers["x-real-ip"]
@@ -73,27 +86,25 @@ async def api_scan(p, c, request: Request, external_id: str):
     for hit in todays_hits:
         hits_amount += hit.amount
     if hits_amount > int(card.daily_limit):
-        return {"status": "ERROR", "reason": "Max daily limit spent."}
+        return LnurlErrorResponse(reason="Max daily limit spent.")
     hit = await create_hit(card.id, ip, agent, card.counter, ctr_int)
 
-    # the raw lnurl
-    lnurlpay_raw = str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id))
-    # bech32 encoded lnurl
-    lnurlpay_bech32 = lnurl_encode(lnurlpay_raw)
     # create a lud17 lnurlp to support lud19, add payLink field of the withdrawRequest
-    lnurlpay_nonbech32_lud17 = lnurlpay_raw.replace("https://", "lnurlp://").replace(
-        "http://", "lnurlp://"
+    lnurlpay_url = str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id))
+    pay_link = lnurlpay_url.replace("http://", "lnurlp://").replace(
+        "https://", "lnurlp://"
     )
-
-    return {
-        "tag": "withdrawRequest",
-        "callback": str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id)),
-        "k1": hit.id,
-        "minWithdrawable": 1 * 1000,
-        "maxWithdrawable": int(card.tx_limit) * 1000,
-        "defaultDescription": f"Boltcard (refund address lnurl://{lnurlpay_bech32})",
-        "payLink": lnurlpay_nonbech32_lud17,  # LUD-19 compatibility
-    }
+    callback_url = parse_obj_as(
+        CallbackUrl, str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id))
+    )
+    return LnurlWithdrawResponse(
+        callback=callback_url,
+        k1=hit.id,
+        minWithdrawable=MilliSatoshi(1000),
+        maxWithdrawable=MilliSatoshi(int(card.tx_limit) * 1000),
+        defaultDescription=f"Boltcard (refund address {pay_link})",
+        payLink=pay_link,  # type: ignore
+    )
 
 
 @boltcards_lnurl_router.get(
@@ -105,34 +116,32 @@ async def lnurl_callback(
     hit_id: str,
     k1: str = Query(None),
     pr: str = Query(None),
-):
-    # TODO: why no hit_id? its not used why is it passed by url?
-    logger.debug(f"TODO: why no hit_id? {hit_id}")
+) -> LnurlErrorResponse | LnurlSuccessResponse:
     if not k1:
-        return {"status": "ERROR", "reason": "Missing K1 token"}
+        return LnurlErrorResponse(reason="Missing K1 token")
+    if k1 != hit_id:
+        return LnurlErrorResponse(reason="K1 token does not match.")
 
-    hit = await get_hit(k1)
-
+    hit = await get_hit(hit_id)
     if not hit:
-        return {
-            "status": "ERROR",
-            "reason": "Record not found for this charge (bad k1)",
-        }
+        return LnurlErrorResponse(reason="LNURL-withdraw record not found.")
     if hit.spent:
-        return {"status": "ERROR", "reason": "Payment already claimed"}
+        return LnurlErrorResponse(reason="Payment already claimed.")
     if not pr:
-        return {"status": "ERROR", "reason": "Missing payment request"}
+        return LnurlErrorResponse(reason="Missing payment request.")
 
     try:
         invoice = bolt11.decode(pr)
     except bolt11.Bolt11Exception:
-        return {"status": "ERROR", "reason": "Failed to decode payment request"}
-
+        return LnurlErrorResponse(reason="Failed to decode payment request.")
+    if not invoice.amount_msat:
+        return LnurlErrorResponse(reason="Invoice has no amount.")
     card = await get_card(hit.card_id)
-    assert card
-    assert invoice.amount_msat, "Invoice amount is missing"
+    if not card:
+        return LnurlErrorResponse(reason="Card not found.")
     hit = await spend_hit(card_id=hit.id, amount=int(invoice.amount_msat / 1000))
-    assert hit
+    if not hit:
+        return LnurlErrorResponse(reason="Failed to update hit as spent.")
     try:
         await pay_invoice(
             wallet_id=card.wallet,
@@ -140,9 +149,9 @@ async def lnurl_callback(
             max_sat=int(card.tx_limit),
             extra={"tag": "boltcards", "hit": hit.id},
         )
-        return {"status": "OK"}
+        return LnurlSuccessResponse()
     except Exception as exc:
-        return {"status": "ERROR", "reason": f"Payment failed - {exc}"}
+        return LnurlErrorResponse(reason=f"Payment failed - {exc}")
 
 
 # /boltcards/api/v1/auth?a=00000000000000000000000000000000
@@ -222,43 +231,27 @@ async def api_auth_post(a: str, request: Request, data: UIDPost, wipe: bool = Fa
 
 
 ###############LNURLPAY REFUNDS#################
-
-
-@boltcards_lnurl_router.get(
-    "/api/v1/lnurlp/{hit_id}",
-    response_class=HTMLResponse,
-    name="boltcards.lnurlp_response",
-)
-async def lnurlp_response(req: Request, hit_id: str):
-    hit = await get_hit(hit_id)
-    assert hit
-    card = await get_card(hit.card_id)
-    assert card
-    if not hit:
-        return {"status": "ERROR", "reason": "LNURL-pay record not found."}
-    if not card.enable:
-        return {"status": "ERROR", "reason": "Card is disabled."}
-    pay_response = {
-        "tag": "payRequest",
-        "callback": str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id)),
-        "metadata": LnurlPayMetadata(json.dumps([["text/plain", "Refund"]])),
-        "minSendable": 1 * 1000,
-        "maxSendable": int(card.tx_limit) * 1000,
-    }
-    return json.dumps(pay_response)
-
-
 @boltcards_lnurl_router.get(
     "/api/v1/lnurlp/cb/{hit_id}",
     name="boltcards.lnurlp_callback",
 )
-async def lnurlp_callback(hit_id: str, amount: str = Query(None)):
+async def lnurlp_callback(
+    hit_id: str, amount: str = Query(None)
+) -> LnurlPayActionResponse | LnurlErrorResponse:
     hit = await get_hit(hit_id)
-    assert hit
-    card = await get_card(hit.card_id)
-    assert card
     if not hit:
-        return {"status": "ERROR", "reason": "LNURL-pay record not found."}
+        return LnurlErrorResponse(reason="LNURL-pay record not found.")
+    card = await get_card(hit.card_id)
+    if not card:
+        return LnurlErrorResponse(reason="Card not found.")
+    if not card.enable:
+        return LnurlErrorResponse(reason="Card is disabled.")
+    if not amount:
+        return LnurlErrorResponse(reason="Missing amount.")
+    if int(amount) < 1000:
+        return LnurlErrorResponse(reason="Amount too low.")
+    if int(amount) > int(card.tx_limit) * 1000:
+        return LnurlErrorResponse(reason="Amount too high.")
 
     payment = await create_invoice(
         wallet_id=card.wallet,
@@ -269,5 +262,32 @@ async def lnurlp_callback(hit_id: str, amount: str = Query(None)):
         ).encode(),
         extra={"refund": hit_id},
     )
+    action = MessageAction(message=Max144Str("Refunded!"))
+    invoice = parse_obj_as(LightningInvoice, payment.bolt11)
+    return LnurlPayActionResponse(pr=invoice, successAction=action)
 
-    return {"pr": payment.bolt11, "routes": []}
+
+@boltcards_lnurl_router.get(
+    "/api/v1/lnurlp/{hit_id}",
+    name="boltcards.lnurlp_response",
+)
+async def lnurlp_response(
+    req: Request, hit_id: str
+) -> LnurlPayResponse | LnurlErrorResponse:
+    hit = await get_hit(hit_id)
+    if not hit:
+        return LnurlErrorResponse(reason="LNURL-pay hit not found.")
+    card = await get_card(hit.card_id)
+    if not card:
+        return LnurlErrorResponse(reason="Card not found.")
+    if not card.enable:
+        return LnurlErrorResponse(reason="Card is disabled.")
+    callback_url = parse_obj_as(
+        CallbackUrl, str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id))
+    )
+    return LnurlPayResponse(
+        callback=callback_url,
+        minSendable=MilliSatoshi(1000),
+        maxSendable=MilliSatoshi(int(card.tx_limit) * 1000),
+        metadata=LnurlPayMetadata(json.dumps([["text/plain", "Refund"]])),
+    )
