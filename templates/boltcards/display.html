@@ -17,7 +17,7 @@ card.card_name }{% endblock %} {% block page %}
       <q-card-section>
         <q-list>
           <q-item v-for="item in cardInfo">
-            <q-item-section>
+            <q-item-section contenteditable="true" @paste="handlePaste($event, item.value)">
               <q-item-label lines="1">${item.label}</q-item-label>
               <q-item-label caption>${card[item.value]}</q-item-label>
             </q-item-section>
@@ -149,6 +149,16 @@ card.card_name }{% endblock %} {% block page %}
             position: position || 'bottom'
           })
         })
+      },
+      handlePaste(event, value) {
+        event.preventDefault();
+        const clipboardData = event.clipboardData || window.clipboardData;
+        const pastedText = clipboardData.getData('text');
+        this.card[value] = pastedText; // Update the field with pasted content
+        this.$q.notify({
+            message: 'Pasted from clipboard!',
+            position: 'bottom'
+        });
       }
     }
   })
