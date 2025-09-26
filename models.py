@@ -74,5 +74,5 @@ class Refund(BaseModel):
 
 
 class UIDPost(BaseModel):
-    UID: str = Field(None, description="The UID of the card.")
-    LNURLW: str = Field(None, description="The LNURLW of the card.")
+    UID: str | None = Field(None, description="The UID of the card.")
+    LNURLW: str | None = Field(None, description="The LNURLW of the card.")
