@@ -492,4 +492,16 @@
 
 {% endblock %} {% block scripts %} {{ window_vars(user) }}
 <script src="{{ static_url_for('boltcards/static', path='js/index.js') }}"></script>
+<style>
+/* Fix wallet select field overflow on mobile */
+@media screen and (max-width: 600px) {
+  .q-select[label*="Wallet"] .q-field__native,
+  .q-select[label*="Wallet"] .q-field__input {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+</style>
 {% endblock %}
