@@ -24,7 +24,7 @@ For the easy way you need:
 - an LNbits instance in clearnet
 - opened on Android in Chrome browser
 - Boltcard extension installed for your LNbits wallet
-- [Boltcard NFC Card Creator App](https://github.com/boltcard/bolt-nfc-android-app) from the [Apple-](https://apps.apple.com/us/app/boltcard-nfc-programmer/id6450968873) or [Play-Store](https://play.google.com/store/search?q=bolt+card+nfc+card+creator&c=apps) to write your keys to the tags once they were generated on LNbits
+- [Boltcard NFC Card Creator App](https://github.com/boltcard/bolt-nfc-android-app) from the [Apple-](https://apps.apple.com/us/app/boltcard-nfc-programmer/id6450968873) or [Play-Store](https://play.google.com/store/apps/details?id=com.lightningnfcapp&hl=en&gl=US) to write your keys to the tags once they were generated on LNbits
 
 If you want to gift a Boltcard, make sure to [include the following data](https://www.figma.com/proto/OH6aGCxH45vNpKsZ2nD96S/Untitled?node-id=6%3A37&scaling=min-zoom&page-id=0%3A1) in your present, so that the user is able to make full use of it.
 
