@@ -1,8 +1,11 @@
 {
+  "id": "boltcards",
+  "version": "1.1.1",
   "name": "Bolt Cards",
+  "repo": "https://github.com/lnbits/boltcards",
   "short_description": "Self custody Bolt Cards with one time LNURLw",
+  "description": "",
   "tile": "/boltcards/static/image/boltcard.png",
-  "version": "1.1.0",
   "min_lnbits_version": "1.3.0",
   "contributors": [
     {
@@ -69,5 +72,9 @@
   ],
   "description_md": "https://raw.githubusercontent.com/lnbits/boltcards/main/description.md",
   "terms_and_conditions_md": "https://raw.githubusercontent.com/lnbits/boltcards/main/toc.md",
-  "license": "MIT"
+  "license": "MIT",
+  "paid_features": "",
+  "tags": ["Hardware", "NFC", "Payments"],
+  "donate": "",
+  "hidden": false
 }
