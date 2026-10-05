@@ -269,6 +269,32 @@
             ></q-input>
           </div>
         </div>
+        <div class="row">
+          <div class="col q-pr-sm">
+            <q-input
+              filled
+              dense
+              v-model.number="cardDialog.data.pin_limit"
+              type="number"
+              label="PIN required above (sat, optional)"
+              hint="Leave empty to disable PIN protection"
+              clearable
+            ></q-input>
+          </div>
+          <div class="col">
+            <q-input
+              filled
+              dense
+              v-model="cardDialog.data.pin"
+              type="password"
+              maxlength="4"
+              label="4-digit PIN (optional)"
+              :hint="cardDialog.data.id ? 'Leave empty to keep existing PIN' : 'Leave empty for no PIN'"
+              :rules="[v => !v || (v.length === 4 && /^\d{4}$/.test(v)) || 'PIN must be exactly 4 digits']"
+              lazy-rules
+            ></q-input>
+          </div>
+        </div>
         <q-input
           filled
           dense

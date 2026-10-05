@@ -1,10 +1,19 @@
 import secrets
 from datetime import datetime
+from hashlib import pbkdf2_hmac
 
 from lnbits.db import Database
 from lnbits.helpers import urlsafe_short_hash
 
 from .models import Card, CreateCardData, Hit, Refund
+
+
+def hash_pin(pin: str, card_id: str) -> str:
+    return pbkdf2_hmac("sha256", pin.encode(), card_id.encode(), 100_000, 32).hex()
+
+
+def verify_pin(pin: str, card_id: str, stored_hash: str) -> bool:
+    return hash_pin(pin, card_id) == stored_hash
 
 db = Database("ext_boltcards")
 
@@ -12,6 +21,8 @@ db = Database("ext_boltcards")
 async def create_card(data: CreateCardData, wallet_id: str) -> Card:
     card_id = urlsafe_short_hash().upper()
     extenal_id = urlsafe_short_hash().lower()
+
+    hashed_pin = hash_pin(data.pin, card_id) if data.pin else None
 
     await db.execute(
         """
@@ -28,11 +39,14 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
             k0,
             k1,
             k2,
-            otp
+            otp,
+            pin_limit,
+            pin
         )
         VALUES (
             :id, :uid, :external_id, :wallet, :card_name, :counter,
-            :tx_limit, :daily_limit, :enable, :k0, :k1, :k2, :otp
+            :tx_limit, :daily_limit, :enable, :k0, :k1, :k2, :otp,
+            :pin_limit, :pin
         )
         """,
         {
@@ -49,6 +63,8 @@ async def create_card(data: CreateCardData, wallet_id: str) -> Card:
             "k1": data.k1,
             "k2": data.k2,
             "otp": secrets.token_hex(16),
+            "pin_limit": data.pin_limit,
+            "pin": hashed_pin,
         },
     )
     card = await get_card(card_id)
@@ -126,10 +142,18 @@ async def update_card_counter(counter: int, card_id: str):
 
 
 async def enable_disable_card(enable: bool, card_id: str) -> Card | None:
-    await db.execute(
-        "UPDATE boltcards.cards SET enable = :enable WHERE id = :id",
-        {"enable": enable, "id": card_id},
-    )
+    if enable:
+        # Reset attempt counter when card is re-enabled so first wrong PIN
+        # doesn't immediately re-block a card that was just unlocked by admin.
+        await db.execute(
+            "UPDATE boltcards.cards SET enable = :enable, pin_total_attempts = 0 WHERE id = :id",
+            {"enable": enable, "id": card_id},
+        )
+    else:
+        await db.execute(
+            "UPDATE boltcards.cards SET enable = :enable WHERE id = :id",
+            {"enable": enable, "id": card_id},
+        )
     return await get_card(card_id)
 
 
@@ -211,6 +235,39 @@ async def create_hit(card_id, ip, useragent, old_ctr, new_ctr) -> Hit:
     hit = await get_hit(hit_id)
     assert hit, "Newly recorded hit couldn't be retrieved"
     return hit
+
+
+async def update_hit_pin_attempts(hit_id: str, attempts: int) -> None:
+    await db.execute(
+        "UPDATE boltcards.hits SET pin_attempts = :attempts WHERE id = :id",
+        {"attempts": attempts, "id": hit_id},
+    )
+
+
+async def increment_card_pin_attempts(card_id: str) -> int:
+    await db.execute(
+        "UPDATE boltcards.cards SET pin_total_attempts = pin_total_attempts + 1 WHERE id = :id",
+        {"id": card_id},
+    )
+    row = await db.fetchone(
+        "SELECT pin_total_attempts FROM boltcards.cards WHERE id = :id",
+        {"id": card_id},
+    )
+    return row["pin_total_attempts"] if row else 0
+
+
+async def reset_card_pin_attempts(card_id: str) -> None:
+    await db.execute(
+        "UPDATE boltcards.cards SET pin_total_attempts = 0 WHERE id = :id",
+        {"id": card_id},
+    )
+
+
+async def invalidate_hit(hit_id: str) -> None:
+    await db.execute(
+        "UPDATE boltcards.hits SET spent = :spent WHERE id = :id",
+        {"spent": True, "id": hit_id},
+    )
 
 
 async def create_refund(hit_id, refund_amount) -> Refund:

@@ -14,6 +14,7 @@ from .crud import (
     get_cards,
     get_hits,
     get_refunds,
+    hash_pin,
     update_card,
 )
 from .models import Card, CreateCardData, Hit, Refund
@@ -84,8 +85,20 @@ async def api_card_update(
             detail="UID already registered. Delete registered card and try again.",
             status_code=HTTPStatus.BAD_REQUEST,
         )
+    original_pin = card.pin
+    original_pin_total_attempts = card.pin_total_attempts
     for key, value in data.dict().items():
         setattr(card, key, value)
+    if data.pin:
+        card.pin = hash_pin(data.pin, card.id)
+        card.pin_total_attempts = 0
+    else:
+        # The UI blanks the PIN field when opening the edit dialog
+        # ("Leave empty to keep existing PIN"), so an empty value must not
+        # overwrite the stored hash - otherwise every edit silently disables
+        # PIN verification.
+        card.pin = original_pin
+        card.pin_total_attempts = original_pin_total_attempts
     await update_card(card)
     return card
 

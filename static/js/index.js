@@ -296,7 +296,14 @@ window.app = Vue.createApp({
       let wallet = _.findWhere(this.g.user.wallets, {
         id: this.cardDialog.data.wallet
       })
-      let data = this.cardDialog.data
+      let data = _.clone(this.cardDialog.data)
+      if (!data.pin) {
+        data.pin = null
+      } else if (!/^\d{4}$/.test(data.pin)) {
+        Quasar.Notify.create({type: 'negative', message: 'PIN must be exactly 4 digits.'})
+        return
+      }
+      if (!data.pin_limit) data.pin_limit = null
       if (data.id) {
         this.updateCard(wallet, data)
       } else {
@@ -316,6 +323,7 @@ window.app = Vue.createApp({
     updateCardDialog(formId) {
       var card = _.findWhere(this.cards, {id: formId})
       this.cardDialog.data = _.clone(card)
+      this.cardDialog.data.pin = ''
 
       this.cardDialog.temp.k0 = this.cardDialog.data.k0
       this.cardDialog.temp.k1 = this.cardDialog.data.k1

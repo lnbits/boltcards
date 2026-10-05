@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import Optional
 
 from fastapi import Query, Request
 from lnurl import Lnurl
@@ -28,6 +29,9 @@ class Card(BaseModel):
     prev_k2: str
     otp: str
     time: datetime
+    pin_limit: Optional[int] = None
+    pin: Optional[str] = None
+    pin_total_attempts: int = 0
 
     def lnurl(self, req: Request) -> Lnurl:
         url = str(
@@ -52,6 +56,8 @@ class CreateCardData(BaseModel):
     prev_k0: str = Query(ZERO_KEY)
     prev_k1: str = Query(ZERO_KEY)
     prev_k2: str = Query(ZERO_KEY)
+    pin_limit: Optional[int] = Query(None)
+    pin: Optional[str] = Query(None)
 
 
 class Hit(BaseModel):
@@ -64,6 +70,7 @@ class Hit(BaseModel):
     new_ctr: int
     amount: int
     time: datetime
+    pin_attempts: int = 0
 
 
 class Refund(BaseModel):
