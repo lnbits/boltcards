@@ -1,6 +1,3 @@
-import secrets
-
-
 async def m001_initial(db):
     await db.execute(
         """
@@ -155,9 +152,3 @@ async def m003_claims(db):
         WHERE spent = FALSE
         """
     )
-    # Replace exposed provisioning tokens without changing programmed card keys.
-    for card in await db.fetchall("SELECT id FROM boltcards.cards"):
-        await db.execute(
-            "UPDATE boltcards.cards SET otp = :otp WHERE id = :id",
-            {"id": card["id"], "otp": secrets.token_hex(16)},
-        )

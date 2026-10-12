@@ -160,6 +160,24 @@ async def test_wrong_uid_does_not_consume_otp(client, card):
     assert (await read_card(card.id)).otp == card.otp
 
 
+@pytest.mark.parametrize("wipe", [False, True])
+async def test_programmer_app_post_payloads(client, card, wipe):
+    payload = (
+        {"LNURLW": f"lnurlw://cards.example/boltcards/api/v1/scan/{card.external_id}"}
+        if wipe
+        else {"UID": card.uid}
+    )
+    response = await client.post(
+        "/boltcards/api/v1/auth",
+        params={"a": card.otp, "wipe": str(wipe).lower()},
+        json=payload,
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["K0"] == card.k0
+    assert result["K1"] == card.k1
+
+
 async def test_auth_rate_limit_shared_between_methods(client):
     for i in range(10):
         method = client.get if i % 2 else client.post
@@ -205,8 +223,9 @@ async def test_pending_hits_cannot_exceed_daily_limit(client, card, monkeypatch)
     response = await claim(client, remaining, 5_000)
     assert response.json()["status"] == "OK"
     response = await scan(client, card, 4)
-    assert response["status"] == "ERROR"
-    assert (await read_card(card.id)).counter == 3
+    assert response["maxWithdrawable"] == 0
+    assert (await claim(client, response, 1_000)).json()["status"] == "ERROR"
+    assert (await read_card(card.id)).counter == 4
 
 
 async def test_duplicate_callback_pays_once(client, card, monkeypatch):

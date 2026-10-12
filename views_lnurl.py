@@ -61,7 +61,7 @@ async def api_scan(
     response = LnurlWithdrawResponse(
         callback=callback_url,
         k1=hit.id,
-        minWithdrawable=MilliSatoshi(1000),
+        minWithdrawable=MilliSatoshi(min(1000, hit.max_msat)),
         maxWithdrawable=MilliSatoshi(hit.max_msat),
         defaultDescription=f"Boltcard (refund address {pay_link})",
     )

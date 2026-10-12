@@ -47,8 +47,7 @@ async def test_upgrade_preserves_programmed_card_and_pending_withdrawal(
         async with legacy.connect() as conn:
             await migrations.m003_claims(conn)
         after = await legacy.fetchone("SELECT * FROM boltcards.cards", model=Card)
-        assert before.dict(exclude={"otp"}) == after.dict(exclude={"otp"})
-        assert before.otp != after.otp and len(after.otp) == 32
+        assert before == after
         paid = await legacy.fetchone(
             "SELECT * FROM boltcards.hits WHERE id = 'paid'", model=Hit
         )

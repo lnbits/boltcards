@@ -24,8 +24,7 @@ If you want to gift a Boltcard, make sure to [include the following data](https:
 
 Existing programmed cards keep their keys, URLs, counters, enabled state and limits;
 they do not need to be rewritten. Existing payment history and pending withdrawal
-tokens are preserved. Provisioning URLs are renewed during the update: reopen the
-card's QR dialog to get its current URL.
+tokens and provisioning URLs are preserved.
 
 `GET /boltcards/api/v1/cards`, `/boltcards/api/v1/hits` and `/boltcards/api/v1/refunds` now require the wallet
 **admin key** and keep their existing response formats. Both methods of
@@ -34,12 +33,13 @@ single-use provisioning token in `a`; a public card UID alone cannot retrieve ke
 Treat provisioning URLs as secrets and redact their query strings from proxy logs.
 
 Boltcard pay links support receiving money without a prior withdrawal, including
-TPoS ATM payments. These incoming payments are recorded as refunds internally.
+TPoS ATM payments, even after the card's spending allowance is exhausted. These
+incoming payments are recorded as refunds internally.
 
 Daily allowances are reserved when a withdrawal is claimed, using UTC calendar days.
 Definite payment failures release the allowance; pending or uncertain outcomes keep
 it reserved for that day. A failed claim cannot reuse the same withdrawal token.
-If card keys were previously exposed, replace them through secure provisioning;
+If card keys or provisioning URLs were previously exposed, replace them through secure provisioning;
 updating the extension deliberately does not rotate physical-card keys.
 
 ## Setting the card - Boltcard NFC Card Creator (easy way)

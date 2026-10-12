@@ -231,7 +231,7 @@ async def create_hit(card: Card, ip: str, useragent: str, new_ctr: int) -> Hit:
             raise ValueError("Card has changed. Please tap again.")
         max_msat = min(current.tx_limit * 1000, await _remaining_budget(conn, current))
         if max_msat < 1000:
-            raise ValueError("Max daily or transaction limit spent.")
+            max_msat = 0
         result = await conn.conn.execute(
             text(
                 "UPDATE boltcards.cards SET counter = :counter "

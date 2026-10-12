@@ -1,4 +1,5 @@
 from secrets import token_hex
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -28,10 +29,22 @@ async def test_refund_list_requires_admin_key(client, owner, card):
     assert response.json()[0]["id"] == refund.id
 
 
-async def test_refund_listener_checks_payment_wallet(owner, card, monkeypatch):
+@pytest.mark.parametrize("shared", [False, True])
+async def test_refund_listener_checks_payment_wallet(owner, card, monkeypatch, shared):
     hit = await create_hit(card, "peer", "agent", 1)
     await spend_hit(hit.id, 2_000)
     sibling = await create_wallet(user_id=owner[0].id)
+    source_wallet_id = "source-wallet" if shared else card.wallet
+    if shared:
+        monkeypatch.setattr(
+            tasks,
+            "get_wallet",
+            AsyncMock(
+                return_value=SimpleNamespace(
+                    id=card.wallet, source_wallet_id=source_wallet_id
+                )
+            ),
+        )
     update = AsyncMock()
     monkeypatch.setattr(tasks, "update_payment", update)
     payment = Payment(
@@ -48,7 +61,7 @@ async def test_refund_listener_checks_payment_wallet(owner, card, monkeypatch):
     assert await get_refunds([hit.id]) == []
     update.assert_not_awaited()
     assert "wh_status" not in payment.extra
-    payment.wallet_id = card.wallet
+    payment.wallet_id = source_wallet_id
     await tasks.on_invoice_paid(payment)
     assert len(await get_refunds([hit.id])) == 1
     update.assert_awaited_once()
@@ -94,3 +107,22 @@ async def test_pay_link_accepts_receive_only_and_refund_payments(
     hit = await get_hit(withdrawal["k1"])
     assert hit and hit.spent is claimed
     assert pay.await_count == int(claimed)
+
+
+@pytest.mark.parametrize("remaining_msat", [0, 499])
+async def test_receive_link_remains_available_after_spending_allowance(
+    client, card, monkeypatch, remaining_msat
+):
+    pay = AsyncMock()
+    monkeypatch.setattr(services, "pay_invoice", pay)
+    for counter, amount in ((1, 10_000), (2, 5_000 - remaining_msat)):
+        withdrawal = await scan(client, card, counter)
+        assert (await claim(client, withdrawal, amount)).json()["status"] == "OK"
+    receive = await scan(client, card, 3)
+    assert receive["tag"] == "withdrawRequest"
+    assert receive["minWithdrawable"] == receive["maxWithdrawable"] == 0
+    assert receive["payLink"].startswith("lnurlp://")
+    metadata = await client.get(f"/boltcards/api/v1/lnurlp/{receive['k1']}")
+    assert metadata.json()["tag"] == "payRequest"
+    assert (await claim(client, receive, 1_000)).json()["status"] == "ERROR"
+    assert pay.await_count == 2
