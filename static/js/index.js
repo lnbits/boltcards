@@ -227,7 +227,7 @@ window.app = Vue.createApp({
         .request(
           'GET',
           '/boltcards/api/v1/refunds?all_wallets=true',
-          this.g.user.wallets[0].inkey
+          this.g.user.wallets[0].adminkey
         )
         .then(response => {
           this.refunds = response.data.map(obj => {

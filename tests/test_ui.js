@@ -54,7 +54,7 @@ vm.runInNewContext(fs.readFileSync('static/js/index.js', 'utf8'), {
           })
         if (args[0] === 'GET' && args[1].includes('/cards') && failRefresh)
           throw new Error('refresh unavailable')
-        return {data: args[1].includes('/hits') ? [] : [card]}
+        return {data: args[1].includes('/cards') ? [card] : []}
       }
     },
     utils: {
@@ -87,6 +87,8 @@ async function main() {
   )
   await options.methods.getHits.call(app)
   assert.equal(requests.find(([, url]) => url.includes('/hits'))[2], 'admin')
+  await options.methods.getRefunds.call(app)
+  assert.equal(requests.find(([, url]) => url.includes('/refunds'))[2], 'admin')
   app.deleteCard('card')
   assert.equal(exportedFiles.length, 0)
   assert.equal(confirmations.length, 0)

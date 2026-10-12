@@ -13,7 +13,7 @@ from lnbits.decorators import optional_user_id
 from lnbits.exceptions import PaymentError
 
 from .. import services, views
-from ..crud import get_card, get_hit
+from ..crud import get_card, get_card_by_uid, get_hit
 from ..nxp424 import get_sun_mac
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -288,3 +288,47 @@ async def test_fractional_sat_budget_is_exact(client, card, monkeypatch):
     assert (await claim(client, hits[0], 9_999)).json()["status"] == "OK"
     assert (await claim(client, hits[1], 5_002)).json()["status"] == "ERROR"
     assert (await claim(client, hits[1], 5_001)).json()["status"] == "OK"
+
+
+async def test_uid_lookup_is_wallet_scoped(client, owner, card):
+    other = await create_user_account_no_ckeck(default_exts=["boltcards"])
+    wallet = other.wallets[0]
+    assert await get_card_by_uid(card.uid, wallet.id) is None
+    owned = await get_card_by_uid(card.uid.lower(), owner[1].id)
+    assert owned and owned.id == card.id
+    data = {
+        "card_name": "Other card",
+        "uid": card.uid.lower(),
+        "k0": token_hex(16),
+        "k1": token_hex(16),
+        "k2": token_hex(16),
+    }
+    response = await client.post(
+        "/boltcards/api/v1/cards", headers={"X-API-KEY": wallet.adminkey}, json=data
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Could not save card details."
+    assert card.wallet not in response.text
+    data["uid"] = token_hex(7)
+    response = await client.post(
+        "/boltcards/api/v1/cards", headers={"X-API-KEY": wallet.adminkey}, json=data
+    )
+    assert response.status_code == 201
+    other_card_id = response.json()["id"]
+    data["uid"] = card.uid
+    response = await client.put(
+        f"/boltcards/api/v1/cards/{other_card_id}",
+        headers={"X-API-KEY": wallet.adminkey},
+        json=data,
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Could not save card details."
+    # An unrelated card update remains available after the rejected collision.
+    data["uid"] = card.uid.lower()
+    response = await client.put(
+        f"/boltcards/api/v1/cards/{card.id}",
+        headers={"X-API-KEY": owner[1].adminkey},
+        json=data,
+    )
+    assert response.status_code == 200
+    assert response.json()["uid"] == card.uid

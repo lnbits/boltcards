@@ -27,7 +27,7 @@ they do not need to be rewritten. Existing payment history and pending withdrawa
 tokens are preserved. Provisioning URLs are renewed during the update: reopen the
 card's QR dialog to get its current URL.
 
-`GET /boltcards/api/v1/cards` and `/boltcards/api/v1/hits` now require the wallet
+`GET /boltcards/api/v1/cards`, `/boltcards/api/v1/hits` and `/boltcards/api/v1/refunds` now require the wallet
 **admin key** and keep their existing response formats. Both methods of
 `/boltcards/api/v1/auth` require a current,
 single-use provisioning token in `a`; a public card UID alone cannot retrieve keys.

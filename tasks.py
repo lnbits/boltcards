@@ -4,7 +4,7 @@ from lnbits.core.crud import update_payment
 from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
 
-from .crud import create_refund, get_hit
+from .crud import create_refund, get_card, get_hit
 
 
 async def wait_for_paid_invoices():
@@ -17,7 +17,6 @@ async def wait_for_paid_invoices():
 
 
 async def on_invoice_paid(payment: Payment) -> None:
-
     if not payment.extra or not payment.extra.get("refund"):
         return
 
@@ -27,7 +26,12 @@ async def on_invoice_paid(payment: Payment) -> None:
 
     hit = await get_hit(str(payment.extra.get("refund")))
 
-    if hit:
-        await create_refund(hit_id=hit.id, refund_amount=(payment.amount / 1000))
-        payment.extra["wh_status"] = 1
-        await update_payment(payment)
+    if not hit:
+        return
+    card = await get_card(hit.card_id)
+    if not card or payment.wallet_id != card.wallet:
+        return
+
+    await create_refund(hit_id=hit.id, refund_amount=(payment.amount / 1000))
+    payment.extra["wh_status"] = 1
+    await update_payment(payment)

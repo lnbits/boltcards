@@ -101,10 +101,10 @@ async def get_card(card_id: str) -> Card | None:
     )
 
 
-async def get_card_by_uid(card_uid: str) -> Card | None:
+async def get_card_by_uid(card_uid: str, wallet_id: str) -> Card | None:
     return await db.fetchone(
-        "SELECT * FROM boltcards.cards WHERE uid = :uid",
-        {"uid": card_uid.upper()},
+        "SELECT * FROM boltcards.cards WHERE uid = :uid AND wallet = :wallet",
+        {"uid": card_uid.upper(), "wallet": wallet_id},
         Card,
     )
 
