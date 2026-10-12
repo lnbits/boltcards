@@ -5,8 +5,9 @@ import pytest
 from lnbits.core.crud import create_wallet
 from lnbits.core.models import Payment
 
-from .. import tasks
-from ..crud import create_hit, create_refund, get_refunds, spend_hit
+from .. import services, tasks, views_lnurl
+from ..crud import create_hit, create_refund, get_card, get_refunds, spend_hit
+from .test_api import claim, invoice, scan
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -53,3 +54,37 @@ async def test_refund_listener_checks_payment_wallet(owner, card, monkeypatch):
     update.assert_awaited_once()
     await tasks.on_invoice_paid(payment)
     assert len(await get_refunds([hit.id])) == 1
+
+
+async def test_refund_invoice_waits_for_claim_but_metadata_remains_available(
+    client, card, monkeypatch
+):
+    monkeypatch.setattr(services, "pay_invoice", AsyncMock())
+    payment = Payment(
+        checking_id=token_hex(16),
+        payment_hash=token_hex(32),
+        wallet_id=card.wallet,
+        amount=5_000,
+        fee=0,
+        bolt11=invoice(5_000),
+    )
+    create_invoice = AsyncMock(return_value=payment)
+    monkeypatch.setattr(views_lnurl, "create_invoice", create_invoice)
+    withdrawal = await scan(client, card, 1)
+    metadata_path = f"/boltcards/api/v1/lnurlp/{withdrawal['k1']}"
+    metadata = (await client.get(metadata_path)).json()
+    assert metadata["tag"] == "payRequest"
+    before = await get_card(card.id)
+    response = await client.get(metadata["callback"], params={"amount": 5_000})
+    assert response.json()["status"] == "ERROR"
+    create_invoice.assert_not_awaited()
+    assert await get_card(card.id) == before
+
+    assert (await claim(client, withdrawal, 1_000)).json()["status"] == "OK"
+    assert (await client.get(metadata_path)).json() == metadata
+    # Keep the existing refund amount policy, including amounts above the claim.
+    response = await client.get(metadata["callback"], params={"amount": 5_000})
+    assert response.json()["pr"] == payment.bolt11
+    create_invoice.assert_awaited_once()
+    assert create_invoice.call_args.kwargs["wallet_id"] == card.wallet
+    assert create_invoice.call_args.kwargs["amount"] == 5

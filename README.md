@@ -33,6 +33,9 @@ card's QR dialog to get its current URL.
 single-use provisioning token in `a`; a public card UID alone cannot retrieve keys.
 Treat provisioning URLs as secrets and redact their query strings from proxy logs.
 
+Refund links remain discoverable before payment. Refund invoices become available
+once the associated withdrawal has been claimed.
+
 Daily allowances are reserved when a withdrawal is claimed, using UTC calendar days.
 Definite payment failures release the allowance; pending or uncertain outcomes keep
 it reserved for that day. A failed claim cannot reuse the same withdrawal token.
