@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 ZERO_KEY = "00000000000000000000000000000000"
 
 
-class Card(BaseModel):
+class CardInfo(BaseModel):
     id: str
     wallet: str
     card_name: str
@@ -20,6 +20,10 @@ class Card(BaseModel):
     tx_limit: int
     daily_limit: int
     enable: bool
+    time: datetime
+
+
+class Card(CardInfo):
     k0: str
     k1: str
     k2: str
@@ -27,7 +31,6 @@ class Card(BaseModel):
     prev_k1: str
     prev_k2: str
     otp: str
-    time: datetime
 
     def lnurl(self, req: Request) -> Lnurl:
         url = str(
@@ -42,9 +45,9 @@ class Card(BaseModel):
 class CreateCardData(BaseModel):
     card_name: str = Query(...)
     uid: str = Query(...)
-    counter: int = Query(0)
-    tx_limit: int = Query(0)
-    daily_limit: int = Query(0)
+    counter: int = Query(0, ge=0, le=16777215)
+    tx_limit: int = Query(0, ge=0)
+    daily_limit: int = Query(0, ge=0)
     enable: bool = Query(True)
     k0: str = Query(ZERO_KEY)
     k1: str = Query(ZERO_KEY)
@@ -63,6 +66,9 @@ class Hit(BaseModel):
     old_ctr: int
     new_ctr: int
     amount: int
+    amount_msat: int = 0
+    max_msat: int = 0
+    claimed_at: datetime | None = None
     time: datetime
 
 

@@ -1,3 +1,6 @@
+import secrets
+
+
 async def m001_initial(db):
     await db.execute(
         """
@@ -128,3 +131,33 @@ async def m002_correct_typing(db):
     """
     )
     await db.execute("DROP TABLE boltcards.cards_m001;")
+
+
+async def m003_claims(db):
+    await db.execute(
+        "ALTER TABLE boltcards.hits ADD COLUMN amount_msat "
+        f"{db.big_int} NOT NULL DEFAULT 0"
+    )
+    await db.execute(
+        "ALTER TABLE boltcards.hits ADD COLUMN max_msat "
+        f"{db.big_int} NOT NULL DEFAULT 0"
+    )
+    await db.execute("ALTER TABLE boltcards.hits ADD COLUMN claimed_at TIMESTAMP")
+    await db.execute(
+        "UPDATE boltcards.hits SET amount_msat = amount * 1000, claimed_at = time "
+        "WHERE spent = TRUE"
+    )
+    await db.execute(
+        f"""
+        UPDATE boltcards.hits SET max_msat = COALESCE(
+            (SELECT CAST(tx_limit AS {db.big_int}) * 1000 FROM boltcards.cards
+             WHERE boltcards.cards.id = boltcards.hits.card_id), 0)
+        WHERE spent = FALSE
+        """
+    )
+    # Replace exposed provisioning tokens without changing programmed card keys.
+    for card in await db.fetchall("SELECT id FROM boltcards.cards"):
+        await db.execute(
+            "UPDATE boltcards.cards SET otp = :otp WHERE id = :id",
+            {"id": card["id"], "otp": secrets.token_hex(16)},
+        )

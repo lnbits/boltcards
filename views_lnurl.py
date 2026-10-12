@@ -1,11 +1,11 @@
 import json
-import secrets
 from http import HTTPStatus
 from urllib.parse import urlparse
 
-import bolt11
-from fastapi import APIRouter, HTTPException, Query, Request
-from lnbits.core.services import create_invoice, pay_invoice
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
+from limits import parse as parse_limit
+from lnbits.core.services import create_invoice
 from lnurl import (
     CallbackUrl,
     LightningInvoice,
@@ -19,75 +19,36 @@ from lnurl import (
     MessageAction,
     MilliSatoshi,
 )
+from loguru import logger
 from pydantic import parse_obj_as
 
-from .crud import (
-    create_hit,
-    get_card,
-    get_card_by_external_id,
-    get_card_by_otp,
-    get_card_by_uid,
-    get_hit,
-    get_hits_today,
-    spend_hit,
-    update_card_counter,
-    update_card_otp,
-)
+from .crud import consume_card_otp, get_card, get_hit
 from .models import UIDPost
-from .nxp424 import decrypt_sun, get_sun_mac
+from .services import pay_card_invoice, scan_card
 
 boltcards_lnurl_router = APIRouter()
 
 
 # /boltcards/api/v1/scan?p=00000000000000000000000000000000&c=0000000000000000
-@boltcards_lnurl_router.get("/api/v1/scan/{external_id}")
+@boltcards_lnurl_router.get(
+    "/api/v1/scan/{external_id}",
+    response_model=LnurlWithdrawResponse | LnurlErrorResponse,
+)
 async def api_scan(
-    p, c, request: Request, external_id: str
-) -> LnurlWithdrawResponse | LnurlErrorResponse:
-    # some wallets send everything as lower case, no bueno
-    p = p.upper()
-    c = c.upper()
-    card = None
-    counter = b""
-    card = await get_card_by_external_id(external_id)
-    if not card:
-        return LnurlErrorResponse(reason="Card not found.")
-    if not card.enable:
-        return LnurlErrorResponse(reason="Card is disabled.")
-    try:
-        card_uid, counter = decrypt_sun(bytes.fromhex(p), bytes.fromhex(card.k1))
-        if card.uid.upper() != card_uid.hex().upper():
-            return LnurlErrorResponse(reason="Card UID mis-match.")
-        if c != get_sun_mac(card_uid, counter, bytes.fromhex(card.k2)).hex().upper():
-            return LnurlErrorResponse(reason="CMAC does not check.")
-    except Exception:
-        return LnurlErrorResponse(reason="Error decrypting card.")
-
-    ctr_int = int.from_bytes(counter, "little")
-
-    if ctr_int <= card.counter:
-        return LnurlErrorResponse(reason="This link is already used.")
-
-    await update_card_counter(ctr_int, card.id)
-
-    # gathering some info for hit record
+    p: str, c: str, request: Request, external_id: str
+) -> JSONResponse | LnurlErrorResponse:
     if not request.client:
         return LnurlErrorResponse(reason="Cannot get client info.")
-    ip = request.client.host
-    if "x-real-ip" in request.headers:
-        ip = request.headers["x-real-ip"]
-    elif "x-forwarded-for" in request.headers:
-        ip = request.headers["x-forwarded-for"]
-
-    agent = request.headers["user-agent"] if "user-agent" in request.headers else ""
-    todays_hits = await get_hits_today(card.id)
-
-    hits_amount = 0
-    for hit in todays_hits:
-        hits_amount += hit.amount
-    if hits_amount > int(card.daily_limit):
-        return LnurlErrorResponse(reason="Max daily limit spent.")
-    hit = await create_hit(card.id, ip, agent, card.counter, ctr_int)
+    try:
+        hit = await scan_card(
+            external_id,
+            p,
+            c,
+            request.client.host,
+            request.headers.get("user-agent", ""),
+        )
+    except ValueError as exc:
+        return LnurlErrorResponse(reason=str(exc))
 
     # create a lud17 lnurlp to support lud19, add payLink field of the withdrawRequest
     lnurlpay_url = str(request.url_for("boltcards.lnurlp_response", hit_id=hit.id))
@@ -97,14 +58,15 @@ async def api_scan(
     callback_url = parse_obj_as(
         CallbackUrl, str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id))
     )
-    return LnurlWithdrawResponse(
+    response = LnurlWithdrawResponse(
         callback=callback_url,
         k1=hit.id,
         minWithdrawable=MilliSatoshi(1000),
-        maxWithdrawable=MilliSatoshi(int(card.tx_limit) * 1000),
+        maxWithdrawable=MilliSatoshi(hit.max_msat),
         defaultDescription=f"Boltcard (refund address {pay_link})",
-        payLink=pay_link,  # type: ignore
     )
+    # lnurl's payLink validator loses the lnurlp scheme during model validation.
+    return JSONResponse({**response.dict(), "payLink": pay_link})
 
 
 @boltcards_lnurl_router.get(
@@ -122,58 +84,37 @@ async def lnurl_callback(
     if k1 != hit_id:
         return LnurlErrorResponse(reason="K1 token does not match.")
 
-    hit = await get_hit(hit_id)
-    if not hit:
-        return LnurlErrorResponse(reason="LNURL-withdraw record not found.")
-    if hit.spent:
-        return LnurlErrorResponse(reason="Payment already claimed.")
-    if not pr:
-        return LnurlErrorResponse(reason="Missing payment request.")
-
     try:
-        invoice = bolt11.decode(pr)
-    except bolt11.Bolt11Exception:
-        return LnurlErrorResponse(reason="Failed to decode payment request.")
-    if not invoice.amount_msat:
-        return LnurlErrorResponse(reason="Invoice has no amount.")
-    card = await get_card(hit.card_id)
-    if not card:
-        return LnurlErrorResponse(reason="Card not found.")
-    hit = await spend_hit(card_id=hit.id, amount=int(invoice.amount_msat / 1000))
-    if not hit:
-        return LnurlErrorResponse(reason="Failed to update hit as spent.")
-    try:
-        await pay_invoice(
-            wallet_id=card.wallet,
-            payment_request=pr,
-            max_sat=int(card.tx_limit),
-            extra={"tag": "boltcards", "hit": hit.id},
-        )
-        return LnurlSuccessResponse()
-    except Exception as exc:
-        return LnurlErrorResponse(reason=f"Payment failed - {exc}")
+        await pay_card_invoice(hit_id, pr)
+    except ValueError as exc:
+        return LnurlErrorResponse(reason=str(exc))
+    return LnurlSuccessResponse()
 
 
-# /boltcards/api/v1/auth?a=00000000000000000000000000000000
-@boltcards_lnurl_router.get("/api/v1/auth")
-async def api_auth(a, request: Request):
-    if a == "00000000000000000000000000000000":
-        response = {"k0": "0" * 32, "k1": "1" * 32, "k2": "2" * 32}
-        return response
-
-    card = await get_card_by_otp(a)
-    if not card:
+def auth_request(request: Request, response: Response):
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    # Reuse LNbits' configured limiter storage and trusted transport client address.
+    limiter = request.app.state.limiter
+    peer = request.client.host if request.client else "unknown"
+    if not limiter.limiter.hit(parse_limit("10/minute"), "boltcards-auth", peer):
+        logger.warning("Boltcard auth rate limit exceeded")
         raise HTTPException(
-            detail="Card does not exist.", status_code=HTTPStatus.NOT_FOUND
+            status_code=HTTPStatus.TOO_MANY_REQUESTS, detail="Try again later."
         )
 
-    new_otp = secrets.token_hex(16)
-    await update_card_otp(new_otp, card.id)
 
+@boltcards_lnurl_router.get("/api/v1/auth", dependencies=[Depends(auth_request)])
+async def api_auth(a: str, request: Request, wipe: bool = False):
+    card = await consume_card_otp(a, wipe=wipe)
+    if not card:
+        logger.warning("Boltcard auth rejected")
+        raise HTTPException(
+            detail="Invalid or expired authorization.", status_code=HTTPStatus.NOT_FOUND
+        )
     lnurlw_base = (
         f"{urlparse(str(request.url)).netloc}/boltcards/api/v1/scan/{card.external_id}"
     )
-
     response = {
         "card_name": card.card_name,
         "id": str(1),
@@ -186,29 +127,19 @@ async def api_auth(a, request: Request):
         "protocol_name": "new_bolt_card_response",
         "protocol_version": str(1),
     }
-
+    if wipe:
+        response["action"] = "wipe"
     return response
 
 
-# /boltcards/api/v1/auth?a=00000000000000000000000000000000
-@boltcards_lnurl_router.post("/api/v1/auth")
+@boltcards_lnurl_router.post("/api/v1/auth", dependencies=[Depends(auth_request)])
 async def api_auth_post(a: str, request: Request, data: UIDPost, wipe: bool = False):
-    card = None
-    if wipe:
-        card = await get_card_by_otp(a)
-    else:
-        if not data.UID:
-            raise HTTPException(
-                detail="Missing UID.", status_code=HTTPStatus.BAD_REQUEST
-            )
-
-        card = await get_card_by_uid(data.UID)
+    card = await consume_card_otp(a, wipe=wipe, uid=data.UID)
     if not card:
+        logger.warning("Boltcard auth rejected")
         raise HTTPException(
-            detail="Card does not exist.", status_code=HTTPStatus.NOT_FOUND
+            detail="Invalid or expired authorization.", status_code=HTTPStatus.NOT_FOUND
         )
-    new_otp = secrets.token_hex(16)
-    await update_card_otp(new_otp, card.id)
     lnurlw_base = (
         f"{urlparse(str(request.url)).netloc}/boltcards/api/v1/scan/{card.external_id}"
     )
