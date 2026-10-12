@@ -172,8 +172,6 @@ async def lnurlp_callback(
     hit = await get_hit(hit_id)
     if not hit:
         return LnurlErrorResponse(reason="LNURL-pay record not found.")
-    if not hit.spent:
-        return LnurlErrorResponse(reason="Withdrawal has not been claimed yet.")
     card = await get_card(hit.card_id)
     if not card:
         return LnurlErrorResponse(reason="Card not found.")

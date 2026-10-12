@@ -33,8 +33,8 @@ card's QR dialog to get its current URL.
 single-use provisioning token in `a`; a public card UID alone cannot retrieve keys.
 Treat provisioning URLs as secrets and redact their query strings from proxy logs.
 
-Refund links remain discoverable before payment. Refund invoices become available
-once the associated withdrawal has been claimed.
+Boltcard pay links support receiving money without a prior withdrawal, including
+TPoS ATM payments. These incoming payments are recorded as refunds internally.
 
 Daily allowances are reserved when a withdrawal is claimed, using UTC calendar days.
 Definite payment failures release the allowance; pending or uncertain outcomes keep
