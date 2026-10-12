@@ -11,6 +11,7 @@ const exportedFiles = []
 const confirmations = []
 const card = {
   id: 'card',
+  enable: true,
   wallet: 'wallet',
   otp: 'otp',
   uid: 'uid',
@@ -18,8 +19,11 @@ const card = {
   k1: 'old-k1',
   k2: 'old-k2'
 }
+let storedCard = {...card}
 let failWipe = false
 let failRefresh = false
+let loseWipeResponse = false
+let failRefreshAfterWipe = false
 let holdWipe = false
 let finishWipe
 vm.runInNewContext(fs.readFileSync('static/js/index.js', 'utf8'), {
@@ -52,9 +56,14 @@ vm.runInNewContext(fs.readFileSync('static/js/index.js', 'utf8'), {
           await new Promise(resolve => {
             finishWipe = resolve
           })
+        if (args[0] === 'POST') {
+          storedCard = {...storedCard, enable: false, k0: '', k1: '', k2: ''}
+          if (loseWipeResponse) throw new Error('response lost')
+          if (failRefreshAfterWipe) failRefresh = true
+        }
         if (args[0] === 'GET' && args[1].includes('/cards') && failRefresh)
           throw new Error('refresh unavailable')
-        return {data: args[1].includes('/cards') ? [card] : []}
+        return {data: args[1].includes('/cards') ? [{...storedCard}] : []}
       }
     },
     utils: {
@@ -100,33 +109,41 @@ async function main() {
   assert.equal(app.qrCodeDialog.data.k0, card.k0)
   assert.equal(copied.length, 1)
   assert.equal(app.qrCodeDialog.wiping, false)
+  assert.equal(app.qrCodeDialog.wipePrepared, false)
+  app.deleteCard('card')
+  assert.equal(exportedFiles.length, 0)
   const failedPosts = requests.filter(([method]) => method === 'POST').length
   await app.prepareWipe()
   assert.equal(
     requests.filter(([method]) => method === 'POST').length,
-    failedPosts
+    failedPosts + 1
   )
   assert.equal(copied[1], copied[0])
 
   failWipe = false
+  await app.prepareWipe()
+  assert.equal(app.qrCodeDialog.wipePrepared, true)
+  assert.equal(JSON.parse(app.qrCodeDialog.data_wipe).k0, card.k0)
+  storedCard = {...card}
   await app.openQrCodeDialog('card', true)
   holdWipe = true
   const pending = app.prepareWipe()
+  await new Promise(resolve => setImmediate(resolve))
   assert.equal(app.qrCodeDialog.wiping, true)
-  assert.equal(copied.length, 3)
+  const pendingCopies = copied.length
   const pendingPosts = requests.filter(([method]) => method === 'POST').length
   await app.prepareWipe()
   assert.equal(
     requests.filter(([method]) => method === 'POST').length,
     pendingPosts
   )
-  assert.equal(copied.length, 3)
+  assert.equal(copied.length, pendingCopies)
   app.deleteCard('card')
   assert.equal(exportedFiles.length, 0)
   finishWipe()
   await pending
   assert.equal(app.qrCodeDialog.wiping, false)
-  assert.equal(errors.length, 1)
+  assert.equal(errors.length, 2)
   const wipe = JSON.parse(copied[0])
   assert.equal(wipe.action, 'wipe')
   assert.equal(wipe.k0, card.k0)
@@ -144,11 +161,29 @@ async function main() {
   assert.equal(confirmations.length, 1)
 
   holdWipe = false
+  storedCard = {...card}
   await app.openQrCodeDialog('card', true)
-  failRefresh = true
+  loseWipeResponse = true
   await app.prepareWipe()
-  assert.equal(errors.length, 2)
-  assert.equal(errors[1].message, 'refresh unavailable')
+  assert.equal(app.qrCodeDialog.wipePrepared, false)
+  const lostResponsePosts = requests.filter(
+    ([method]) => method === 'POST'
+  ).length
+  loseWipeResponse = false
+  await app.prepareWipe()
+  assert.equal(app.qrCodeDialog.wipePrepared, true)
+  assert.equal(
+    requests.filter(([method]) => method === 'POST').length,
+    lostResponsePosts
+  )
+  assert.equal(JSON.parse(app.qrCodeDialog.data_wipe).k0, card.k0)
+
+  storedCard = {...card}
+  await app.openQrCodeDialog('card', true)
+  failRefreshAfterWipe = true
+  await app.prepareWipe()
+  assert.equal(errors.at(-1).message, 'refresh unavailable')
+  assert.equal(app.qrCodeDialog.wipePrepared, true)
   assert.equal(app.qrCodeDialog.wiping, false)
   assert.equal(JSON.parse(app.qrCodeDialog.data_wipe).k0, card.k0)
 

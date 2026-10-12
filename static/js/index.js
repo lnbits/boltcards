@@ -145,6 +145,7 @@ window.app = Vue.createApp({
         show: false,
         wipe: false,
         wiping: false,
+        wipePrepared: false,
         data_wipe: null,
         data: null
       }
@@ -255,6 +256,7 @@ window.app = Vue.createApp({
           k4: card.k2
         }
         this.qrCodeDialog.data_wipe = null
+        this.qrCodeDialog.wipePrepared = false
         this.qrCodeDialog.wipe = wipe
         this.qrCodeDialog.show = true
       } catch (error) {
@@ -265,10 +267,8 @@ window.app = Vue.createApp({
       if (this.qrCodeDialog.wiping) return
       this.qrCodeDialog.wiping = true
       try {
+        const data = this.qrCodeDialog.data
         if (!this.qrCodeDialog.data_wipe) {
-          const data = this.qrCodeDialog.data
-          const card = _.findWhere(this.cards, {id: data.id})
-          const wallet = _.findWhere(this.g.user.wallets, {id: card.wallet})
           this.qrCodeDialog.data_wipe = JSON.stringify({
             action: 'wipe',
             k0: data.k0,
@@ -279,16 +279,23 @@ window.app = Vue.createApp({
             uid: data.uid,
             version: 1
           })
-          this.copyText(this.qrCodeDialog.data_wipe)
-          await LNbits.api.request(
-            'POST',
-            data.link + '&wipe=true',
-            wallet.adminkey,
-            {UID: data.uid}
-          )
+        }
+        this.copyText(this.qrCodeDialog.data_wipe)
+        if (!this.qrCodeDialog.wipePrepared) {
           await this.getCards()
-        } else {
-          this.copyText(this.qrCodeDialog.data_wipe)
+          const card = _.findWhere(this.cards, {id: data.id})
+          // A previous request may have succeeded despite a lost response.
+          if (card.enable || card.k0 || card.k1 || card.k2) {
+            const wallet = _.findWhere(this.g.user.wallets, {id: card.wallet})
+            await LNbits.api.request(
+              'POST',
+              data.link + '&wipe=true',
+              wallet.adminkey,
+              {UID: data.uid}
+            )
+          }
+          this.qrCodeDialog.wipePrepared = true
+          await this.getCards()
         }
       } catch (error) {
         LNbits.utils.notifyApiError(error)
@@ -396,7 +403,7 @@ window.app = Vue.createApp({
         })
     },
     deleteCard(cardId) {
-      if (!this.qrCodeDialog.data_wipe || this.qrCodeDialog.wiping) return
+      if (!this.qrCodeDialog.wipePrepared || this.qrCodeDialog.wiping) return
       let cards = _.findWhere(this.cards, {id: cardId})
 
       Quasar.exportFile(

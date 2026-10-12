@@ -462,7 +462,7 @@
         color="grey"
         @click="prepareWipe"
         :loading="qrCodeDialog.wiping"
-        :label="qrCodeDialog.data_wipe ? 'Copy wipe data' : 'Prepare wipe data'"
+        :label="qrCodeDialog.wipePrepared ? 'Copy wipe data' : 'Prepare wipe data'"
         v-show="qrCodeDialog.wipe"
       >
         <q-tooltip>Click to copy, then paste to NFC Card Creator</q-tooltip>
@@ -473,7 +473,7 @@
         outline
         color="red"
         @click="deleteCard(qrCodeDialog.data.id)"
-        :disable="!qrCodeDialog.data_wipe || qrCodeDialog.wiping"
+        :disable="!qrCodeDialog.wipePrepared || qrCodeDialog.wiping"
         label="Delete card"
         v-show="qrCodeDialog.wipe"
         v-close-popup
@@ -486,14 +486,21 @@
         outline
         color="grey"
         :href="deeplinkUrl"
-        v-show="!qrCodeDialog.data_wipe"
+        v-show="!qrCodeDialog.wipePrepared"
         target="_blank"
         label="Use Boltcard App"
       >
         <q-tooltip>Use Boltcard Programmer App</q-tooltip>
       </q-btn>
       <div class="row q-mt-lg q-gutter-sm">
-        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+        <q-btn
+          v-close-popup
+          flat
+          color="grey"
+          class="q-ml-auto"
+          :disable="qrCodeDialog.wiping"
+          >Close</q-btn
+        >
       </div>
     </q-card>
   </q-dialog>
