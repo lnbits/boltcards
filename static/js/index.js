@@ -144,6 +144,9 @@ window.app = Vue.createApp({
       qrCodeDialog: {
         show: false,
         wipe: false,
+        wiping: false,
+        wipePrepared: false,
+        data_wipe: null,
         data: null
       }
     }
@@ -191,11 +194,11 @@ window.app = Vue.createApp({
       })
     },
     getCards() {
-      LNbits.api
+      return LNbits.api
         .request(
           'GET',
           '/boltcards/api/v1/cards?all_wallets=true',
-          this.g.user.wallets[0].inkey
+          this.g.user.wallets[0].adminkey
         )
         .then(response => {
           this.cards = response.data.map(function (obj) {
@@ -211,7 +214,7 @@ window.app = Vue.createApp({
         .request(
           'GET',
           '/boltcards/api/v1/hits?all_wallets=true',
-          this.g.user.wallets[0].inkey
+          this.g.user.wallets[0].adminkey
         )
         .then(response => {
           this.hits = response.data.map(obj => {
@@ -225,7 +228,7 @@ window.app = Vue.createApp({
         .request(
           'GET',
           '/boltcards/api/v1/refunds?all_wallets=true',
-          this.g.user.wallets[0].inkey
+          this.g.user.wallets[0].adminkey
         )
         .then(response => {
           this.refunds = response.data.map(obj => {
@@ -233,35 +236,72 @@ window.app = Vue.createApp({
           })
         })
     },
-    openQrCodeDialog(cardId, wipe) {
-      var card = _.findWhere(this.cards, {id: cardId})
-      this.qrCodeDialog.data = {
-        id: card.id,
-        link: window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp,
-        encodedURI: encodeURIComponent(
-          window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp
-        ),
-        name: card.card_name,
-        uid: card.uid,
-        external_id: card.external_id,
-        k0: card.k0,
-        k1: card.k1,
-        k2: card.k2,
-        k3: card.k1,
-        k4: card.k2
+    async openQrCodeDialog(cardId, wipe) {
+      try {
+        await this.getCards()
+        const card = _.findWhere(this.cards, {id: cardId})
+        this.qrCodeDialog.data = {
+          id: card.id,
+          link: window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp,
+          encodedURI: encodeURIComponent(
+            window.location.origin + '/boltcards/api/v1/auth?a=' + card.otp
+          ),
+          name: card.card_name,
+          uid: card.uid,
+          external_id: card.external_id,
+          k0: card.k0,
+          k1: card.k1,
+          k2: card.k2,
+          k3: card.k1,
+          k4: card.k2
+        }
+        this.qrCodeDialog.data_wipe = null
+        this.qrCodeDialog.wipePrepared = false
+        this.qrCodeDialog.wipe = wipe
+        this.qrCodeDialog.show = true
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
       }
-      this.qrCodeDialog.data_wipe = JSON.stringify({
-        action: 'wipe',
-        k0: card.k0,
-        k1: card.k1,
-        k2: card.k2,
-        k3: card.k1,
-        k4: card.k2,
-        uid: card.uid,
-        version: 1
-      })
-      this.qrCodeDialog.wipe = wipe
-      this.qrCodeDialog.show = true
+    },
+    async prepareWipe() {
+      if (this.qrCodeDialog.wiping) return
+      this.qrCodeDialog.wiping = true
+      try {
+        const data = this.qrCodeDialog.data
+        if (!this.qrCodeDialog.data_wipe) {
+          this.qrCodeDialog.data_wipe = JSON.stringify({
+            action: 'wipe',
+            k0: data.k0,
+            k1: data.k1,
+            k2: data.k2,
+            k3: data.k3,
+            k4: data.k4,
+            uid: data.uid,
+            version: 1
+          })
+        }
+        this.copyText(this.qrCodeDialog.data_wipe)
+        if (!this.qrCodeDialog.wipePrepared) {
+          await this.getCards()
+          const card = _.findWhere(this.cards, {id: data.id})
+          // A previous request may have succeeded despite a lost response.
+          if (card.enable || card.k0 || card.k1 || card.k2) {
+            const wallet = _.findWhere(this.g.user.wallets, {id: card.wallet})
+            await LNbits.api.request(
+              'POST',
+              data.link + '&wipe=true',
+              wallet.adminkey,
+              {UID: data.uid}
+            )
+          }
+          this.qrCodeDialog.wipePrepared = true
+          await this.getCards()
+        }
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      } finally {
+        this.qrCodeDialog.wiping = false
+      }
     },
     addCardOpen() {
       this.cardDialog.show = true
@@ -273,21 +313,9 @@ window.app = Vue.createApp({
           .getRandomValues(new Uint8Array(size))
           .reduce((acc, i) => acc + i.toString(16).padStart(2, '0'), '')
 
-      debugcard =
-        typeof this.cardDialog.data.card_name === 'string' &&
-        this.cardDialog.data.card_name.search('debug') > -1
-
-      this.cardDialog.data.k0 = debugcard
-        ? '11111111111111111111111111111111'
-        : genRandomHexBytes(16)
-
-      this.cardDialog.data.k1 = debugcard
-        ? '22222222222222222222222222222222'
-        : genRandomHexBytes(16)
-
-      this.cardDialog.data.k2 = debugcard
-        ? '33333333333333333333333333333333'
-        : genRandomHexBytes(16)
+      this.cardDialog.data.k0 = genRandomHexBytes(16)
+      this.cardDialog.data.k1 = genRandomHexBytes(16)
+      this.cardDialog.data.k2 = genRandomHexBytes(16)
     },
     closeFormDialog() {
       this.cardDialog.data = {}
@@ -375,6 +403,7 @@ window.app = Vue.createApp({
         })
     },
     deleteCard(cardId) {
+      if (!this.qrCodeDialog.wipePrepared || this.qrCodeDialog.wiping) return
       let cards = _.findWhere(this.cards, {id: cardId})
 
       Quasar.exportFile(

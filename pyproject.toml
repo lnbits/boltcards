@@ -1,6 +1,6 @@
 [project]
 name = "lnbits-boltcards"
-version = "0.0.0"
+version = "1.2.0"
 requires-python = ">=3.10,<3.13"
 description = "LNbits, free and open-source Lightning wallet and accounts system."
 authors = [{ name = "Alan Bits", email = "alan@lnbits.com" }]
@@ -10,19 +10,23 @@ dependencies = [ "lnbits>1" ]
 [tool.poetry]
 package-mode = false
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "black",
     "pytest-asyncio",
     "pytest",
     "mypy",
     "pre-commit",
     "ruff",
-    "pytest-md",
 ]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
+
+# SQLAlchemy 1.4 does not bundle type information.
+[[tool.mypy.overrides]]
+module = ["sqlalchemy.*"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
