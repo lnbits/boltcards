@@ -23,6 +23,11 @@ dev = [
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 
+# SQLAlchemy 1.4 does not bundle type information.
+[[tool.mypy.overrides]]
+module = ["sqlalchemy.*"]
+ignore_missing_imports = true
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
