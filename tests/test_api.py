@@ -207,6 +207,28 @@ async def test_invalid_cmac_does_not_consume_counter(client, card):
     assert (await read_card(card.id)).counter == 0
 
 
+@pytest.mark.parametrize("key_format", ["upper", "spaced"])
+async def test_stale_card_edit_preserves_counter(client, owner, card, key_format):
+    data = card.dict(exclude={"time"})
+    data["card_name"] = "Renamed card"
+    data["k1"] = (
+        card.k1.upper()
+        if key_format == "upper"
+        else " ".join(card.k1[i : i + 2] for i in range(0, len(card.k1), 2))
+    )
+    await scan(client, card, 1)
+    response = await client.put(
+        f"/boltcards/api/v1/cards/{card.id}",
+        headers={"X-API-KEY": owner[1].adminkey},
+        json=data,
+    )
+    assert response.status_code == 200
+    assert response.json()["counter"] == 1
+    assert response.json()["card_name"] == "Renamed card"
+    assert (await read_card(card.id)).counter == 1
+    assert (await scan(client, card, 1))["status"] == "ERROR"
+
+
 async def test_pending_hits_cannot_exceed_daily_limit(client, card, monkeypatch):
     pay = AsyncMock()
     monkeypatch.setattr(services, "pay_invoice", pay)

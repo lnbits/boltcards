@@ -65,14 +65,18 @@ async def update_card(card: Card) -> Card:
         previous = await conn.fetchone(
             "SELECT * FROM boltcards.cards WHERE id = :id", {"id": card.id}, Card
         )
+        keys_changed = previous is not None and (
+            previous.uid.upper() != card.uid.upper()
+            or bytes.fromhex(previous.k1) != bytes.fromhex(card.k1)
+            or bytes.fromhex(previous.k2) != bytes.fromhex(card.k2)
+        )
+        if previous and not keys_changed:
+            card.counter = max(card.counter, previous.counter)
         card.otp = secrets.token_hex(16)
         await conn.conn.execute(
             text(update_query("boltcards.cards", card)), model_to_dict(card)
         )
-        if previous and (
-            not card.enable
-            or (previous.uid, previous.k1, previous.k2) != (card.uid, card.k1, card.k2)
-        ):
+        if previous and (not card.enable or keys_changed):
             await conn.conn.execute(
                 text(
                     "UPDATE boltcards.hits SET spent = TRUE "

@@ -20,28 +20,6 @@ If you want to gift a Boltcard, make sure to [include the following data](https:
 
 **_Always backup all keys that you're trying to write on the card. Without them you may not be able to change them in the future!_**
 
-## Updating existing installations
-
-Existing programmed cards keep their keys, URLs, counters, enabled state and limits;
-they do not need to be rewritten. Existing payment history and pending withdrawal
-tokens and provisioning URLs are preserved.
-
-`GET /boltcards/api/v1/cards`, `/boltcards/api/v1/hits` and `/boltcards/api/v1/refunds` now require the wallet
-**admin key** and keep their existing response formats. Both methods of
-`/boltcards/api/v1/auth` require a current,
-single-use provisioning token in `a`; a public card UID alone cannot retrieve keys.
-Treat provisioning URLs as secrets and redact their query strings from proxy logs.
-
-Boltcard pay links support receiving money without a prior withdrawal, including
-TPoS ATM payments, even after the card's spending allowance is exhausted. These
-incoming payments are recorded as refunds internally.
-
-Daily allowances are reserved when a withdrawal is claimed, using UTC calendar days.
-Definite payment failures release the allowance; pending or uncertain outcomes keep
-it reserved for that day. A failed claim cannot reuse the same withdrawal token.
-If card keys or provisioning URLs were previously exposed, replace them through secure provisioning;
-updating the extension deliberately does not rotate physical-card keys.
-
 ## Setting the card - Boltcard NFC Card Creator (easy way)
 
 - Add new card in the extension.
@@ -69,7 +47,6 @@ Since v0.1.2 of Boltcard NFC Card Creator it is possible not only to reset the k
 
 - In the Boltcard extension click the QR code button next to a card to view its details and select WIPE
 - OR click the red cross icon on the right side to reach the same
-- Use the Boltcard App link, or click PREPARE WIPE DATA to disable the card on the server and show/copy its wipe QR. Save these keys before closing: the server clears its copies when authorizing the wipe.
 - In the Boltcard app (Reset Keys)
   - Click SCAN QR CODE to scan the QR
   - Or click WIPE DATA in LNbits to copy and paste in to the app (PASTE KEY JSON)

@@ -179,14 +179,20 @@ async def lnurlp_callback(
         return LnurlErrorResponse(reason="Card is disabled.")
     if not amount:
         return LnurlErrorResponse(reason="Missing amount.")
-    if int(amount) < 1000:
+    try:
+        amount_msat = int(amount)
+    except ValueError:
+        return LnurlErrorResponse(reason="Invalid amount.")
+    if amount_msat < 1000:
         return LnurlErrorResponse(reason="Amount too low.")
-    if int(amount) > int(card.tx_limit) * 1000:
+    if amount_msat > card.tx_limit * 1000:
         return LnurlErrorResponse(reason="Amount too high.")
+    if amount_msat % 1000:
+        return LnurlErrorResponse(reason="Amount must be a whole number of satoshis.")
 
     payment = await create_invoice(
         wallet_id=card.wallet,
-        amount=int(int(amount) / 1000),
+        amount=amount_msat // 1000,
         memo=f"Refund {hit_id}",
         unhashed_description=LnurlPayMetadata(
             json.dumps([["text/plain", "Refund"]])

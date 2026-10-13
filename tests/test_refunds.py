@@ -109,6 +109,21 @@ async def test_pay_link_accepts_receive_only_and_refund_payments(
     assert pay.await_count == int(claimed)
 
 
+@pytest.mark.parametrize("amount", ["abc", "1.5", "", "-1000", "999", "1500", "10001"])
+async def test_receive_callback_rejects_invalid_amount(
+    client, card, monkeypatch, amount
+):
+    create_invoice = AsyncMock()
+    monkeypatch.setattr(views_lnurl, "create_invoice", create_invoice)
+    hit = await create_hit(card, "peer", "agent", 1)
+    response = await client.get(
+        f"/boltcards/api/v1/lnurlp/cb/{hit.id}", params={"amount": amount}
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "ERROR"
+    create_invoice.assert_not_awaited()
+
+
 @pytest.mark.parametrize("remaining_msat", [0, 499])
 async def test_receive_link_remains_available_after_spending_allowance(
     client, card, monkeypatch, remaining_msat
