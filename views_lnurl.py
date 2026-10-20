@@ -15,11 +15,10 @@ from lnurl import (
     LnurlPayResponse,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
-    Max144Str,
     MessageAction,
     MilliSatoshi,
 )
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from .crud import (
     create_hit,
@@ -94,8 +93,8 @@ async def api_scan(
     pay_link = lnurlpay_url.replace("http://", "lnurlp://").replace(
         "https://", "lnurlp://"
     )
-    callback_url = parse_obj_as(
-        CallbackUrl, str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id))
+    callback_url = TypeAdapter(CallbackUrl).validate_python(
+        str(request.url_for("boltcards.lnurl_callback", hit_id=hit.id))
     )
     return LnurlWithdrawResponse(
         callback=callback_url,
@@ -262,8 +261,8 @@ async def lnurlp_callback(
         ).encode(),
         extra={"refund": hit_id},
     )
-    action = MessageAction(message=Max144Str("Refunded!"))
-    invoice = parse_obj_as(LightningInvoice, payment.bolt11)
+    action = MessageAction(message="Refunded!")
+    invoice = TypeAdapter(LightningInvoice).validate_python(payment.bolt11)
     return LnurlPayActionResponse(pr=invoice, successAction=action)
 
 
@@ -282,8 +281,8 @@ async def lnurlp_response(
         return LnurlErrorResponse(reason="Card not found.")
     if not card.enable:
         return LnurlErrorResponse(reason="Card is disabled.")
-    callback_url = parse_obj_as(
-        CallbackUrl, str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id))
+    callback_url = TypeAdapter(CallbackUrl).validate_python(
+        str(req.url_for("boltcards.lnurlp_callback", hit_id=hit_id))
     )
     return LnurlPayResponse(
         callback=callback_url,

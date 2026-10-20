@@ -84,7 +84,7 @@ async def api_card_update(
             detail="UID already registered. Delete registered card and try again.",
             status_code=HTTPStatus.BAD_REQUEST,
         )
-    for key, value in data.dict().items():
+    for key, value in data.model_dump().items():
         setattr(card, key, value)
     await update_card(card)
     return card
