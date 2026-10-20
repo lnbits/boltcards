@@ -1,3 +1,5 @@
+.PHONY: all format check prettier pyright mypy black ruff checkruff checkprettier checkblack checkeditorconfig test teststatic install-pre-commit-hook pre-commit checkbundle
+
 all: format check
 
 format: prettier black ruff
@@ -30,10 +32,13 @@ checkblack:
 checkeditorconfig:
 	editorconfig-checker
 
-test:
+test: teststatic
 	PYTHONUNBUFFERED=1 \
 	DEBUG=true \
 	uv run pytest
+
+teststatic:
+	node tests/test_ui.js
 install-pre-commit-hook:
 	@echo "Installing pre-commit hook to git"
 	@echo "Uninstall the hook with uv run pre-commit uninstall"

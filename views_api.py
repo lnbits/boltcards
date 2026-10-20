@@ -1,9 +1,11 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from lnbits.core.crud import get_user
 from lnbits.core.models import WalletTypeInfo
-from lnbits.decorators import require_admin_key, require_invoice_key
+from lnbits.decorators import require_admin_key
+from loguru import logger
+from sqlalchemy.exc import IntegrityError
 
 from .crud import (
     create_card,
@@ -23,14 +25,18 @@ boltcards_api_router = APIRouter()
 
 @boltcards_api_router.get("/api/v1/cards")
 async def api_cards(
-    key_info: WalletTypeInfo = Depends(require_invoice_key), all_wallets: bool = False
+    response: Response,
+    key_info: WalletTypeInfo = Depends(require_admin_key),
+    all_wallets: bool = False,
 ) -> list[Card]:
+    response.headers["Cache-Control"] = "no-store"
     wallet_ids = [key_info.wallet.id]
 
     if all_wallets:
         user = await get_user(key_info.wallet.user)
         wallet_ids = user.wallet_ids if user else []
 
+    logger.info("Boltcard list retrieved: {}", key_info.wallet.id)
     return await get_cards(wallet_ids)
 
 
@@ -69,8 +75,10 @@ def validate_card(data: CreateCardData):
 async def api_card_update(
     data: CreateCardData,
     card_id: str,
+    response: Response,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Card:
+    response.headers["Cache-Control"] = "no-store"
     card = await get_card(card_id)
     if not card:
         raise HTTPException(
@@ -78,7 +86,7 @@ async def api_card_update(
         )
     if card.wallet != wallet.wallet.id:
         raise HTTPException(detail="Not your card.", status_code=HTTPStatus.FORBIDDEN)
-    check_uid = await get_card_by_uid(data.uid)
+    check_uid = await get_card_by_uid(data.uid, wallet.wallet.id)
     if check_uid and check_uid.id != card_id:
         raise HTTPException(
             detail="UID already registered. Delete registered card and try again.",
@@ -86,7 +94,13 @@ async def api_card_update(
         )
     for key, value in data.dict().items():
         setattr(card, key, value)
-    await update_card(card)
+    card.uid = card.uid.upper()
+    try:
+        await update_card(card)
+    except IntegrityError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="Could not save card details."
+        ) from exc
     return card
 
 
@@ -97,15 +111,22 @@ async def api_card_update(
 )
 async def api_card_create(
     data: CreateCardData,
+    response: Response,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Card:
-    check_uid = await get_card_by_uid(data.uid)
+    response.headers["Cache-Control"] = "no-store"
+    check_uid = await get_card_by_uid(data.uid, wallet.wallet.id)
     if check_uid:
         raise HTTPException(
             detail="UID already registered. Delete registered card and try again.",
             status_code=HTTPStatus.BAD_REQUEST,
         )
-    card = await create_card(wallet_id=wallet.wallet.id, data=data)
+    try:
+        card = await create_card(wallet_id=wallet.wallet.id, data=data)
+    except IntegrityError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="Could not save card details."
+        ) from exc
     if not card:
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -115,19 +136,27 @@ async def api_card_create(
 
 
 @boltcards_api_router.get(
-    "/api/v1/cards/enable/{card_id}/{enable}", status_code=HTTPStatus.OK
+    "/api/v1/cards/enable/{card_id}/{enable}",
+    status_code=HTTPStatus.OK,
 )
 async def enable_card(
     card_id: str,
     enable: bool,
+    response: Response,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Card:
+    response.headers["Cache-Control"] = "no-store"
     card = await get_card(card_id)
     if not card:
         raise HTTPException(detail="No card found.", status_code=HTTPStatus.NOT_FOUND)
     if card.wallet != wallet.wallet.id:
         raise HTTPException(detail="Not your card.", status_code=HTTPStatus.FORBIDDEN)
-    card = await enable_disable_card(enable=enable, card_id=card_id)
+    try:
+        card = await enable_disable_card(enable=enable, card_id=card_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail=str(exc)
+        ) from exc
     if not card:
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -155,9 +184,11 @@ async def api_card_delete(
 
 @boltcards_api_router.get("/api/v1/hits")
 async def api_hits(
-    key_info: WalletTypeInfo = Depends(require_invoice_key),
+    response: Response,
+    key_info: WalletTypeInfo = Depends(require_admin_key),
     all_wallets: bool = Query(False),
 ) -> list[Hit]:
+    response.headers["Cache-Control"] = "no-store"
     wallet_ids = [key_info.wallet.id]
 
     if all_wallets:
@@ -174,9 +205,11 @@ async def api_hits(
 
 @boltcards_api_router.get("/api/v1/refunds")
 async def api_refunds(
-    key_info: WalletTypeInfo = Depends(require_invoice_key),
+    response: Response,
+    key_info: WalletTypeInfo = Depends(require_admin_key),
     all_wallets: bool = Query(False),
 ) -> list[Refund]:
+    response.headers["Cache-Control"] = "no-store"
     wallet_ids = [key_info.wallet.id]
 
     if all_wallets:

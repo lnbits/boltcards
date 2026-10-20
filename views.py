@@ -8,6 +8,7 @@ from lnbits.decorators import check_user_exists, optional_user_id
 from lnbits.helpers import template_renderer
 
 from .crud import get_card_by_external_id, get_hits, get_refunds
+from .models import CardInfo
 
 boltcards_generic_router = APIRouter()
 
@@ -39,16 +40,15 @@ async def display(
 
     wallet = await get_wallet(card.wallet)
     wallet_balance = 0
-    if wallet:
-        if wallet.user != user_id:
-            raise HTTPException(
-                status_code=HTTPStatus.FORBIDDEN, detail="Card does not belong to user."
-            )
-        wallet_balance = wallet.balance
+    if not wallet or wallet.user != user_id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail="Card does not belong to user."
+        )
+    wallet_balance = wallet.balance
     hits = await get_hits([card.id])
     hits_json = [hit.json() for hit in hits]
     refunds = [refund.hit_id for refund in await get_refunds([hit.id for hit in hits])]
-    card_json = card.json(exclude={"wallet"})
+    card_json = CardInfo(**card.dict()).json(exclude={"wallet"})
     return boltcards_renderer().TemplateResponse(
         "boltcards/display.html",
         {
