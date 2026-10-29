@@ -77,7 +77,7 @@ async def test_card_list_requires_admin_and_preserves_payload(client, owner, car
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"
     item = next(c for c in response.json() if c["id"] == card.id)
-    assert item == json.loads(card.json())
+    assert item == json.loads(card.model_dump_json())
     other = await create_user_account_no_ckeck(default_exts=["boltcards"])
     response = await client.get(path, headers={"X-API-KEY": other.wallets[0].adminkey})
     assert response.status_code == 200
@@ -97,7 +97,7 @@ async def test_hit_list_requires_admin_and_preserves_payload(client, owner, card
     response = await client.get(path, headers={"X-API-KEY": wallet.adminkey})
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"
-    assert response.json() == [json.loads(hit.json())]
+    assert response.json() == [json.loads(hit.model_dump_json())]
     other = await create_user_account_no_ckeck(default_exts=["boltcards"])
     response = await client.get(path, headers={"X-API-KEY": other.wallets[0].adminkey})
     assert response.status_code == 200
@@ -209,7 +209,7 @@ async def test_invalid_cmac_does_not_consume_counter(client, card):
 
 @pytest.mark.parametrize("key_format", ["upper", "spaced"])
 async def test_stale_card_edit_preserves_counter(client, owner, card, key_format):
-    data = card.dict(exclude={"time"})
+    data = card.model_dump(exclude={"time"})
     data["card_name"] = "Renamed card"
     data["k1"] = (
         card.k1.upper()

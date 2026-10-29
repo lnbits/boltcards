@@ -20,7 +20,7 @@ def boltcards_renderer():
 @boltcards_generic_router.get("/", response_class=HTMLResponse)
 async def index(request: Request, user: User = Depends(check_user_exists)):
     return boltcards_renderer().TemplateResponse(
-        "boltcards/index.html", {"request": request, "user": user.json()}
+        "boltcards/index.html", {"request": request, "user": user.model_dump_json()}
     )
 
 
@@ -46,9 +46,9 @@ async def display(
         )
     wallet_balance = wallet.balance
     hits = await get_hits([card.id])
-    hits_json = [hit.json() for hit in hits]
+    hits_json = [hit.model_dump_json() for hit in hits]
     refunds = [refund.hit_id for refund in await get_refunds([hit.id for hit in hits])]
-    card_json = CardInfo(**card.dict()).json(exclude={"wallet"})
+    card_json = CardInfo(**card.model_dump()).model_dump_json(exclude={"wallet"})
     return boltcards_renderer().TemplateResponse(
         "boltcards/display.html",
         {

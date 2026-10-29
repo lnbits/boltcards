@@ -105,7 +105,7 @@ async def test_spend_hit_returns_claim_state(card):
 
 async def test_key_update_invalidates_old_taps_and_hits(card):
     hit = await create_hit(card, "peer", "agent", 1)
-    changed = card.copy(update={"k1": token_hex(16)})
+    changed = card.model_copy(update={"k1": token_hex(16)})
     await update_card(changed)
     with pytest.raises(ValueError, match="has changed"):
         await create_hit(card, "peer", "agent", 2)
@@ -116,7 +116,7 @@ async def test_key_update_invalidates_old_taps_and_hits(card):
 @pytest.mark.parametrize("field", ["uid", "k1", "k2"])
 async def test_reprovisioning_allows_counter_reset(card, field):
     await create_hit(card, "peer", "agent", 5)
-    changed = card.copy(update={field: token_hex(7 if field == "uid" else 16)})
+    changed = card.model_copy(update={field: token_hex(7 if field == "uid" else 16)})
     await update_card(changed)
     saved = await get_card(card.id)
     assert saved and saved.counter == 0
