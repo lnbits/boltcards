@@ -1,21 +1,29 @@
 [project]
 name = "lnbits-boltcards"
-version = "0.0.0"
-requires-python = ">=3.10,<3.13"
+version = "1.2.0"
+requires-python = ">=3.10,<3.14"
 description = "LNbits, free and open-source Lightning wallet and accounts system."
 authors = [{ name = "Alan Bits", email = "alan@lnbits.com" }]
 urls = { Homepage = "https://lnbits.com", Repository = "https://github.com/lnbits/bitcoinswitch_extension" }
-dependencies = [ "lnbits>1" ]
+dependencies = [ "lnbits>=1.7.0rc1" ]
 
 [tool.poetry]
 package-mode = false
 
+[tool.poetry.dependencies]
+# Poetry enforces LNURL's declared upper bound. Use uv for Python 3.13.
+python = ">=3.10,<3.13"
+
 [tool.uv]
-dev-dependencies = [
+# coincurve 20's source build uses the pre-0.10 scikit-build-core configuration.
+build-constraint-dependencies = ["scikit-build-core<0.10"]
+
+[dependency-groups]
+dev = [
     "black",
     "pytest-asyncio",
     "pytest",
-    "mypy",
+    "mypy==1.17.1",
     "pre-commit",
     "ruff",
     "pytest-md",
