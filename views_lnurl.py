@@ -32,6 +32,7 @@ boltcards_lnurl_router = APIRouter()
 @boltcards_lnurl_router.get(
     "/api/v1/scan/{external_id}",
     response_model=LnurlWithdrawResponse | LnurlErrorResponse,
+    openapi_extra={"x-lnbits-local-lnurl": True},
 )
 async def api_scan(
     p: str, c: str, request: Request, external_id: str
@@ -72,6 +73,7 @@ async def api_scan(
     "/api/v1/lnurl/cb/{hit_id}",
     status_code=HTTPStatus.OK,
     name="boltcards.lnurl_callback",
+    openapi_extra={"x-lnbits-local-lnurl": True},
 )
 async def lnurl_callback(
     hit_id: str,
@@ -164,6 +166,7 @@ async def api_auth_post(a: str, request: Request, data: UIDPost, wipe: bool = Fa
 @boltcards_lnurl_router.get(
     "/api/v1/lnurlp/cb/{hit_id}",
     name="boltcards.lnurlp_callback",
+    openapi_extra={"x-lnbits-local-lnurl": True},
 )
 async def lnurlp_callback(
     hit_id: str, amount: str = Query(None)
@@ -206,6 +209,7 @@ async def lnurlp_callback(
 @boltcards_lnurl_router.get(
     "/api/v1/lnurlp/{hit_id}",
     name="boltcards.lnurlp_response",
+    openapi_extra={"x-lnbits-local-lnurl": True},
 )
 async def lnurlp_response(
     req: Request, hit_id: str
