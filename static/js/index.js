@@ -263,8 +263,33 @@ window.app = Vue.createApp({
         LNbits.utils.notifyApiError(error)
       }
     },
+    // Never put empty keys into the clipboard: that would replace a good backup.
+    keysAvailable(data) {
+      if (data.k0 && data.k1 && data.k2) return true
+      Quasar.Notify.create({
+        type: 'negative',
+        timeout: 8000,
+        message:
+          'No keys are stored for this card. Nothing was copied, your clipboard is unchanged.'
+      })
+      return false
+    },
+    confirmWipe() {
+      // Second click ("Copy wipe data"): the card is already disabled.
+      if (this.qrCodeDialog.wipePrepared) return this.prepareWipe()
+      LNbits.utils
+        .confirmDialog(
+          'Wipe this card now? It is disabled (its keys stay stored until you delete the card).'
+        )
+        .onOk(() => this.prepareWipe())
+    },
     async prepareWipe() {
       if (this.qrCodeDialog.wiping) return
+      if (
+        !this.qrCodeDialog.data_wipe &&
+        !this.keysAvailable(this.qrCodeDialog.data)
+      )
+        return
       this.qrCodeDialog.wiping = true
       try {
         const data = this.qrCodeDialog.data
@@ -284,8 +309,10 @@ window.app = Vue.createApp({
         if (!this.qrCodeDialog.wipePrepared) {
           await this.getCards()
           const card = _.findWhere(this.cards, {id: data.id})
-          // A previous request may have succeeded despite a lost response.
-          if (card.enable || card.k0 || card.k1 || card.k2) {
+          // A previous request may have succeeded despite a lost response. The
+          // wipe only disables the card (keys stay) and its one-time link cannot
+          // be used twice, so only wipe a card that is still enabled.
+          if (card.enable) {
             const wallet = _.findWhere(this.g.user.wallets, {id: card.wallet})
             await LNbits.api.request(
               'POST',

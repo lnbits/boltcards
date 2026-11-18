@@ -183,10 +183,11 @@ async def consume_card_otp(
             return None
         changes = "otp = :new_otp"
         if wipe:
-            changes += (
-                ", enable = FALSE, k0 = '', k1 = '', k2 = '', "
-                "prev_k0 = '', prev_k1 = '', prev_k2 = ''"
-            )
+            # The wipe only disables the card (open taps are closed below). The
+            # keys stay stored: they are the owner's only copy until the NFC chip
+            # has really been reset, and the wipe data is useless without them.
+            # They are removed together with the card ("Delete card").
+            changes += ", enable = FALSE"
         result = await conn.conn.execute(
             text(f"UPDATE boltcards.cards SET {changes} WHERE id = :id AND otp = :otp"),
             {"id": card.id, "otp": otp, "new_otp": secrets.token_hex(16)},

@@ -8,7 +8,9 @@ const requests = []
 const copied = []
 const errors = []
 const exportedFiles = []
+const notifications = []
 const confirmations = []
+let lastConfirmCallback
 const card = {
   id: 'card',
   enable: true,
@@ -36,6 +38,7 @@ vm.runInNewContext(fs.readFileSync('static/js/index.js', 'utf8'), {
     }
   },
   Quasar: {
+    Notify: {create: options => notifications.push(options)},
     date: {formatDate: () => 'date'},
     exportFile: (...args) => exportedFiles.push(args)
   },
@@ -57,7 +60,8 @@ vm.runInNewContext(fs.readFileSync('static/js/index.js', 'utf8'), {
             finishWipe = resolve
           })
         if (args[0] === 'POST') {
-          storedCard = {...storedCard, enable: false, k0: '', k1: '', k2: ''}
+          // Server behavior: the wipe disables the card and keeps its keys.
+          storedCard = {...storedCard, enable: false}
           if (loseWipeResponse) throw new Error('response lost')
           if (failRefreshAfterWipe) failRefresh = true
         }
@@ -70,7 +74,11 @@ vm.runInNewContext(fs.readFileSync('static/js/index.js', 'utf8'), {
       notifyApiError: error => errors.push(error),
       confirmDialog: message => {
         confirmations.push(message)
-        return {onOk: () => {}}
+        return {
+          onOk: callback => {
+            lastConfirmCallback = callback
+          }
+        }
       }
     }
   }
@@ -191,6 +199,55 @@ async function main() {
   app.generateKeys()
   assert.match(app.cardDialog.data.k1, /^[0-9a-f]{32}$/)
   assert.notEqual(app.cardDialog.data.k1, '2'.repeat(32))
+  // "Wipe card now" asks first and only wipes after the confirmation.
+  failWipe = false
+  failRefresh = false
+  loseWipeResponse = false
+  failRefreshAfterWipe = false
+  holdWipe = false
+  storedCard = {...card}
+  await app.openQrCodeDialog('card', true)
+  const postsBefore = requests.filter(([method]) => method === 'POST').length
+  const confirmationsBefore = confirmations.length
+  app.confirmWipe()
+  assert.equal(confirmations.length, confirmationsBefore + 1)
+  assert.equal(requests.filter(([method]) => method === 'POST').length, postsBefore)
+  assert.equal(storedCard.enable, true)
+  await lastConfirmCallback()
+  assert.equal(requests.filter(([method]) => method === 'POST').length, postsBefore + 1)
+  assert.equal(app.qrCodeDialog.wipePrepared, true)
+  // The wipe disables the card but keeps its keys.
+  assert.equal(storedCard.enable, false)
+  assert.equal(storedCard.k0, card.k0)
+  // Second click only copies, without asking again.
+  const afterWipe = confirmations.length
+  await app.confirmWipe()
+  assert.equal(confirmations.length, afterWipe)
+
+  // Re-opening the dialog after the wipe still shows the real keys, so the
+  // wipe data can be copied again (no new wipe request: the card is disabled).
+  await app.openQrCodeDialog('card', true)
+  assert.equal(app.qrCodeDialog.data.k0, card.k0)
+  const postsAfterReopen = requests.filter(([method]) => method === 'POST').length
+  const copiesBefore = copied.length
+  await app.prepareWipe()
+  assert.equal(JSON.parse(copied[copiesBefore]).k0, card.k0)
+  assert.equal(requests.filter(([method]) => method === 'POST').length, postsAfterReopen)
+
+  // Empty keys (cards wiped by older versions) must never replace a good
+  // backup in the clipboard.
+  storedCard = {...card, enable: false, k0: '', k1: '', k2: ''}
+  await app.openQrCodeDialog('card', true)
+  const copiesNow = copied.length
+  const postsNow = requests.filter(([method]) => method === 'POST').length
+  const notificationsNow = notifications.length
+  await app.prepareWipe()
+  assert.equal(copied.length, copiesNow)
+  assert.equal(requests.filter(([method]) => method === 'POST').length, postsNow)
+  assert.equal(notifications.length, notificationsNow + 1)
+  assert.equal(app.qrCodeDialog.wiping, false)
+  assert.equal(app.qrCodeDialog.wipePrepared, false)
+
   console.log('Card UI checks passed')
 }
 main().catch(error => {
