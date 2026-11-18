@@ -308,13 +308,15 @@ async def test_payment_failure_budget_and_errors(client, card, monkeypatch, stat
     error = (
         RuntimeError("sensitive internal detail")
         if status == "unknown"
-        else PaymentError("sensitive internal detail", status=status)
+        else PaymentError("reason from lnbits", status=status)
     )
     pay = AsyncMock(side_effect=error)
     monkeypatch.setattr(services, "pay_invoice", pay)
     hit = await scan(client, card, 1)
     response = await claim(client, hit, 10_000)
     assert response.json()["status"] == "ERROR"
+    # LNbits' own message is shown, an unexpected exception never is.
+    assert ("reason from lnbits" in response.text) == (status != "unknown")
     assert "sensitive internal detail" not in response.text
     saved = await get_hit(hit["k1"])
     assert saved and saved.spent
@@ -373,3 +375,69 @@ async def test_uid_lookup_is_wallet_scoped(client, owner, card):
     )
     assert response.status_code == 200
     assert response.json()["uid"] == card.uid
+
+
+@pytest.mark.parametrize(
+    ("status", "message", "expected"),
+    [
+        ("failed", "Insufficient balance.", "Payment failed: Insufficient balance."),
+        ("failed", "", "Payment failed."),
+        ("pending", "Payment is still pending.", "Payment is still pending."),
+        # PaymentError defaults to "pending" even for plain failures: no prefix.
+        (
+            "pending",
+            "Extension 'boltcards' not enabled.",
+            "Extension 'boltcards' not enabled.",
+        ),
+        ("pending", "", "Payment is still pending."),
+        (
+            "failed",
+            "two\nlines\twith   spaces",
+            "Payment failed: two lines with spaces",
+        ),
+    ],
+)
+async def test_payer_sees_the_payment_error_reason(
+    client, card, monkeypatch, status, message, expected
+):
+    pay = AsyncMock(side_effect=PaymentError(message, status=status))
+    monkeypatch.setattr(services, "pay_invoice", pay)
+    hit = await scan(client, card, 1)
+    response = await claim(client, hit, 5_000)
+    assert response.json() == {"status": "ERROR", "reason": expected}
+
+
+async def test_payer_reason_is_short(client, card, monkeypatch):
+    pay = AsyncMock(side_effect=PaymentError("x" * 500, status="failed"))
+    monkeypatch.setattr(services, "pay_invoice", pay)
+    hit = await scan(client, card, 1)
+    reason = (await claim(client, hit, 5_000)).json()["reason"]
+    assert reason == "Payment failed: " + "x" * services.MAX_REASON_LENGTH
+
+
+async def test_payment_failure_is_logged_with_the_real_reason(
+    client, card, monkeypatch
+):
+    logged = []
+    monkeypatch.setattr(
+        services.logger, "warning", lambda *args, **kwargs: logged.append(args)
+    )
+    pay = AsyncMock(side_effect=PaymentError("Insufficient balance.", status="failed"))
+    monkeypatch.setattr(services, "pay_invoice", pay)
+    hit = await scan(client, card, 1)
+    await claim(client, hit, 5_000)
+    template, *values = logged[0]
+    line = template.format(*values)
+    assert "Insufficient balance." in line
+    assert "status=failed" in line and card.id in line
+    # No payment request (invoice) in the log.
+    assert "lnbc" not in line
+
+    logged.clear()
+    unexpected = AsyncMock(side_effect=RuntimeError("boom"))
+    monkeypatch.setattr(services, "pay_invoice", unexpected)
+    hit = await scan(client, card, 2)
+    response = await claim(client, hit, 1_000)
+    assert response.json()["reason"] == "Payment failed or is still pending."
+    template, *values = logged[0]
+    assert "RuntimeError: boom" in template.format(*values)

@@ -7,6 +7,24 @@ from .crud import create_hit, get_card_by_external_id, get_hit, release_hit, spe
 from .models import Hit
 from .nxp424 import decrypt_sun, get_sun_mac
 
+# Longest reason shown to the payer (it ends up on terminals and small displays).
+MAX_REASON_LENGTH = 100
+
+
+def payment_error_reason(exc: PaymentError) -> str:
+    """Short single-line reason for the payer, taken from LNbits' own message.
+
+    PaymentError messages are curated by LNbits ("Insufficient balance.", ...),
+    unlike arbitrary exceptions, so they are safe to show. Only LNbits' status
+    decides the prefix: PaymentError defaults to status "pending", also for
+    plain failures without an explicit status, so the message is shown as is
+    unless the payment is known to have failed.
+    """
+    message = " ".join(str(exc.message or "").split())[:MAX_REASON_LENGTH]
+    if exc.status == "failed":
+        return f"Payment failed: {message}" if message else "Payment failed."
+    return message or "Payment is still pending."
+
 
 async def scan_card(external_id: str, p: str, c: str, ip: str, useragent: str) -> Hit:
     card = await get_card_by_external_id(external_id)
@@ -51,9 +69,24 @@ async def pay_card_invoice(hit_id: str, payment_request: str | None) -> None:
     except PaymentError as exc:
         if exc.status == "failed":
             await release_hit(hit.id)
-        raise ValueError("Payment failed or is still pending.") from exc
+        # The real reason belongs in the server log; the payer gets a short text.
+        logger.warning(
+            "Boltcard payment not completed: card={} hit={} status={}: {}",
+            card.id,
+            hit.id,
+            exc.status,
+            exc.message,
+        )
+        raise ValueError(payment_error_reason(exc)) from exc
     except Exception as exc:
         # shortcut: unknown outcomes keep their allowance until UTC midnight;
-        # reconcile payment status to release it sooner.
-        logger.warning("Boltcard payment outcome unknown: {}", hit.id)
+        # reconcile payment status to release it sooner. The details stay in the
+        # log, the payer only gets a generic text.
+        logger.warning(
+            "Boltcard payment outcome unknown: card={} hit={} {}: {}",
+            card.id,
+            hit.id,
+            type(exc).__name__,
+            exc,
+        )
         raise ValueError("Payment failed or is still pending.") from exc
