@@ -263,9 +263,12 @@ window.app = Vue.createApp({
         LNbits.utils.notifyApiError(error)
       }
     },
+    hasKeys(data) {
+      return !!(data && data.k0 && data.k1 && data.k2)
+    },
     // Never put empty keys into the clipboard: that would replace a good backup.
     keysAvailable(data) {
-      if (data.k0 && data.k1 && data.k2) return true
+      if (this.hasKeys(data)) return true
       Quasar.Notify.create({
         type: 'negative',
         timeout: 8000,
@@ -430,18 +433,26 @@ window.app = Vue.createApp({
         })
     },
     deleteCard(cardId) {
-      if (!this.qrCodeDialog.wipePrepared || this.qrCodeDialog.wiping) return
+      // A card without stored keys (for example wiped by 1.2.x) has nothing to
+      // back up or wipe, so it can be deleted right away.
+      const nothingToWipe = !this.hasKeys(this.qrCodeDialog.data)
+      if (!(this.qrCodeDialog.wipePrepared || nothingToWipe)) return
+      if (this.qrCodeDialog.wiping) return
       let cards = _.findWhere(this.cards, {id: cardId})
 
-      Quasar.exportFile(
-        cards.card_name + '.json',
-        this.qrCodeDialog.data_wipe,
-        'application/json'
-      )
+      if (this.qrCodeDialog.data_wipe) {
+        Quasar.exportFile(
+          cards.card_name + '.json',
+          this.qrCodeDialog.data_wipe,
+          'application/json'
+        )
+      }
 
       LNbits.utils
         .confirmDialog(
-          "Are you sure you want to delete this card? Without access to the card keys you won't be able to reset them in the future!"
+          nothingToWipe
+            ? 'This card has no keys stored. Delete it?'
+            : "Are you sure you want to delete this card? Without access to the card keys you won't be able to reset them in the future!"
         )
         .onOk(() => {
           LNbits.api

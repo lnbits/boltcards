@@ -248,6 +248,26 @@ async function main() {
   assert.equal(app.qrCodeDialog.wiping, false)
   assert.equal(app.qrCodeDialog.wipePrepared, false)
 
+  // A card without keys can be deleted right away: nothing to back up or wipe.
+  storedCard = {...card, enable: false, k0: '', k1: '', k2: ''}
+  await app.openQrCodeDialog('card', true)
+  assert.equal(app.hasKeys(app.qrCodeDialog.data), false)
+  assert.equal(app.qrCodeDialog.wipePrepared, false)
+  const exportsBeforeKeyless = exportedFiles.length
+  const confirmationsKeyless = confirmations.length
+  app.deleteCard('card')
+  assert.equal(confirmations.length, confirmationsKeyless + 1)
+  assert.match(confirmations[confirmationsKeyless], /no keys stored/)
+  assert.equal(exportedFiles.length, exportsBeforeKeyless)
+
+  // With keys, delete still waits for the wipe.
+  storedCard = {...card}
+  await app.openQrCodeDialog('card', true)
+  assert.equal(app.hasKeys(app.qrCodeDialog.data), true)
+  const confirmationsLocked = confirmations.length
+  app.deleteCard('card')
+  assert.equal(confirmations.length, confirmationsLocked)
+
   console.log('Card UI checks passed')
 }
 main().catch(error => {

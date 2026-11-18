@@ -424,7 +424,14 @@
           ]"
         />
       </div>
-      <p v-if="qrCodeDialog.wipe">
+      <p v-if="!hasKeys(qrCodeDialog.data)" class="text-negative">
+        <strong>No keys are stored for this card</strong>, for example because
+        it was wiped with Bolt Cards 1.2.x. There is nothing to back up or wipe,
+        and the card cannot be programmed. You can delete it
+        <span v-if="qrCodeDialog.wipe">(button below)</span>, or edit the card
+        and enter its keys again.
+      </p>
+      <p v-else-if="qrCodeDialog.wipe">
         Wiping disables this card. Its keys stay stored until you delete the
         card. Save the wipe data before you delete it.
       </p>
@@ -452,7 +459,7 @@
         color="grey"
         @click="copyText(qrCodeDialog.data.link)"
         label="Create link"
-        v-show="!qrCodeDialog.wipe"
+        v-show="!qrCodeDialog.wipe && hasKeys(qrCodeDialog.data)"
       >
         <q-tooltip>Click to copy, then paste to NFC Card Creator</q-tooltip>
       </q-btn>
@@ -463,7 +470,7 @@
         @click="confirmWipe"
         :loading="qrCodeDialog.wiping"
         :label="qrCodeDialog.wipePrepared ? 'Copy wipe data' : 'Wipe card now'"
-        v-show="qrCodeDialog.wipe"
+        v-show="qrCodeDialog.wipe && hasKeys(qrCodeDialog.data)"
       >
         <q-tooltip v-if="qrCodeDialog.wipePrepared"
           >Click to copy, then paste to NFC Card Creator</q-tooltip
@@ -478,7 +485,10 @@
         outline
         color="red"
         @click="deleteCard(qrCodeDialog.data.id)"
-        :disable="!qrCodeDialog.wipePrepared || qrCodeDialog.wiping"
+        :disable="
+          !(qrCodeDialog.wipePrepared || !hasKeys(qrCodeDialog.data)) ||
+          qrCodeDialog.wiping
+        "
         label="Delete card"
         v-show="qrCodeDialog.wipe"
         v-close-popup
@@ -491,7 +501,7 @@
         outline
         color="grey"
         :href="deeplinkUrl"
-        v-show="!qrCodeDialog.wipePrepared"
+        v-show="!qrCodeDialog.wipePrepared && hasKeys(qrCodeDialog.data)"
         target="_blank"
         label="Use Boltcard App"
       >
