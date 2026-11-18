@@ -263,8 +263,36 @@ window.app = Vue.createApp({
         LNbits.utils.notifyApiError(error)
       }
     },
+    hasKeys(data) {
+      return !!(data && data.k0 && data.k1 && data.k2)
+    },
+    // Never put empty keys into the clipboard: that would replace a good backup.
+    keysAvailable(data) {
+      if (this.hasKeys(data)) return true
+      Quasar.Notify.create({
+        type: 'negative',
+        timeout: 8000,
+        message:
+          'No keys are stored for this card. Nothing was copied, your clipboard is unchanged.'
+      })
+      return false
+    },
+    confirmWipe() {
+      // Second click ("Copy wipe data"): the card is already disabled.
+      if (this.qrCodeDialog.wipePrepared) return this.prepareWipe()
+      LNbits.utils
+        .confirmDialog(
+          'Wipe this card now? It is disabled (its keys stay stored until you delete the card).'
+        )
+        .onOk(() => this.prepareWipe())
+    },
     async prepareWipe() {
       if (this.qrCodeDialog.wiping) return
+      if (
+        !this.qrCodeDialog.data_wipe &&
+        !this.keysAvailable(this.qrCodeDialog.data)
+      )
+        return
       this.qrCodeDialog.wiping = true
       try {
         const data = this.qrCodeDialog.data
@@ -284,8 +312,10 @@ window.app = Vue.createApp({
         if (!this.qrCodeDialog.wipePrepared) {
           await this.getCards()
           const card = _.findWhere(this.cards, {id: data.id})
-          // A previous request may have succeeded despite a lost response.
-          if (card.enable || card.k0 || card.k1 || card.k2) {
+          // A previous request may have succeeded despite a lost response. The
+          // wipe only disables the card (keys stay) and its one-time link cannot
+          // be used twice, so only wipe a card that is still enabled.
+          if (card.enable) {
             const wallet = _.findWhere(this.g.user.wallets, {id: card.wallet})
             await LNbits.api.request(
               'POST',
@@ -403,18 +433,26 @@ window.app = Vue.createApp({
         })
     },
     deleteCard(cardId) {
-      if (!this.qrCodeDialog.wipePrepared || this.qrCodeDialog.wiping) return
+      // A card without stored keys (for example wiped by 1.2.x) has nothing to
+      // back up or wipe, so it can be deleted right away.
+      const nothingToWipe = !this.hasKeys(this.qrCodeDialog.data)
+      if (!(this.qrCodeDialog.wipePrepared || nothingToWipe)) return
+      if (this.qrCodeDialog.wiping) return
       let cards = _.findWhere(this.cards, {id: cardId})
 
-      Quasar.exportFile(
-        cards.card_name + '.json',
-        this.qrCodeDialog.data_wipe,
-        'application/json'
-      )
+      if (this.qrCodeDialog.data_wipe) {
+        Quasar.exportFile(
+          cards.card_name + '.json',
+          this.qrCodeDialog.data_wipe,
+          'application/json'
+        )
+      }
 
       LNbits.utils
         .confirmDialog(
-          "Are you sure you want to delete this card? Without access to the card keys you won't be able to reset them in the future!"
+          nothingToWipe
+            ? 'This card has no keys stored. Delete it?'
+            : "Are you sure you want to delete this card? Without access to the card keys you won't be able to reset them in the future!"
         )
         .onOk(() => {
           LNbits.api
